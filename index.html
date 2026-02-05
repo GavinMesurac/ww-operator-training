@@ -198,6 +198,103 @@ const FORMULAS = [
       return { type, difficulty, question, answer, meta: { from: c.from, to: c.to, value } };
     }
   }
+    ,
+  // =========================
+  // Batch 2 – Process Control
+  // =========================
+
+  {
+    family: "F/M Ratio",
+    generate: (opts) => {
+      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+
+      const bodLoad =
+        +(rand() * (difficulty === "hard" ? 6000 : difficulty === "normal" ? 3000 : 1500) + 300).toFixed(0); // lb/day
+      const mlvss =
+        +(rand() * (difficulty === "hard" ? 25000 : difficulty === "normal" ? 12000 : 6000) + 1000).toFixed(0); // lb
+
+      const fm = bodLoad / mlvss;
+
+      const question =
+        `A plant has a 5-day BOD loading of ${bodLoad} lb/day and an MLVSS of ${mlvss} lb.\n\n` +
+        `What is the F/M ratio?`;
+
+      const answer = `${fmt(fm, 3)}`;
+
+      return { type, difficulty, question, answer, meta: { bodLoad, mlvss } };
+    }
+  },
+
+  {
+    family: "Solids Retention Time (SRT)",
+    generate: (opts) => {
+      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+
+      const totalSolids =
+        +(rand() * (difficulty === "hard" ? 80000 : difficulty === "normal" ? 40000 : 20000) + 2000).toFixed(0); // lb
+      const solidsWasted =
+        +(rand() * (difficulty === "hard" ? 8000 : difficulty === "normal" ? 4000 : 1500) + 200).toFixed(0); // lb/day
+
+      const srt = totalSolids / solidsWasted;
+
+      const question =
+        `A system contains ${totalSolids} lb of solids and wastes ${solidsWasted} lb/day.\n\n` +
+        `What is the solids retention time (days)?`;
+
+      const answer = `${fmt(srt, 2)} days`;
+
+      return { type, difficulty, question, answer, meta: { totalSolids, solidsWasted } };
+    }
+  },
+
+  {
+    family: "Sludge Volume Index (SVI)",
+    generate: (opts) => {
+      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+
+      const settleVol =
+        +(rand() * (difficulty === "hard" ? 400 : difficulty === "normal" ? 250 : 150) + 50).toFixed(0); // mL/L
+      const mlss =
+        +(rand() * (difficulty === "hard" ? 6000 : difficulty === "normal" ? 4000 : 2500) + 1000).toFixed(0); // mg/L
+
+      const svi = (settleVol / mlss) * 1000;
+
+      const question =
+        `A sludge settles to ${settleVol} mL/L after 30 minutes and the MLSS is ${mlss} mg/L.\n\n` +
+        `What is the sludge volume index (SVI)?`;
+
+      const answer = `${fmt(svi, 1)} mL/g`;
+
+      return { type, difficulty, question, answer, meta: { settleVol, mlss } };
+    }
+  },
+
+  {
+    family: "Flow Velocity",
+    generate: (opts) => {
+      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+
+      const flow =
+        +(rand() * (difficulty === "hard" ? 20 : difficulty === "normal" ? 10 : 5) + 0.5).toFixed(2); // cfs
+      const area =
+        +(rand() * (difficulty === "hard" ? 20 : difficulty === "normal" ? 10 : 4) + 0.5).toFixed(2); // ft²
+
+      const velocity = flow / area;
+
+      const question =
+        `A channel has a flow of ${flow} ft³/sec and a cross-sectional area of ${area} ft².\n\n` +
+        `What is the flow velocity in ft/sec?`;
+
+      const answer = `${fmt(velocity, 2)} ft/sec`;
+
+      return { type, difficulty, question, answer, meta: { flow, area } };
+    }
+  }
+
 ];
 
     // =========================
