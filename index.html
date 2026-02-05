@@ -11,19 +11,47 @@
 
   <pre id="out"></pre>
 <script>
+  // -----------------------------
+  // Question generator
+  // -----------------------------
+
+  const questions = [
+    {
+      id: "detention_time_basic",
+      difficulty: "easy",
+      generate: function () {
+        const flowMGD = +(Math.random() * 4 + 1).toFixed(2);
+        const volumeMG = +(Math.random() * 10 + 2).toFixed(2);
+        const detentionTime = +(volumeMG / flowMGD).toFixed(2);
+
+        return {
+          question:
+            "A wastewater plant has a flow of " + flowMGD + " MGD " +
+            "and a basin volume of " + volumeMG + " MG.\n\n" +
+            "What is the detention time in days?",
+
+          answer:
+            detentionTime + " days"
+        };
+      }
+    }
+  ];
+
+  // -----------------------------
+  // Run one question
+  // -----------------------------
+
   function run() {
-    const flowMGD = (Math.random() * 4 + 1).toFixed(2);
-    const volumeMG = (Math.random() * 10 + 2).toFixed(2);
-    const dt = (volumeMG / flowMGD).toFixed(2);
+    const q = questions[0].generate();
 
     document.getElementById("out").textContent =
-      "QUESTION:\n" +
-      "A plant has a flow of " + flowMGD + " MGD\n" +
-      "and a volume of " + volumeMG + " MG.\n\n" +
-      "ANSWER:\n" +
-      "Detention Time = " + dt + " days";
+      "QUESTION:\n\n" +
+      q.question +
+      "\n\nANSWER:\n" +
+      q.answer;
   }
 </script>
+  
 </body>
 </html>
 
