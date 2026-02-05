@@ -2,59 +2,231 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>WW Test</title>
+  <title>WW Math Generator (Admin)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 18px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
+    input, select { padding: 8px; font-size: 16px; }
+    .card { background: #f6f6f6; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    pre { white-space: pre-wrap; background: #111; color: #eee; padding: 12px; border-radius: 10px; overflow: auto; }
+    .small { opacity: 0.8; font-size: 14px; }
+    .ok { color: #0a7; font-weight: 700; }
+    .bad { color: #c33; font-weight: 700; }
+  </style>
 </head>
 <body>
-  <h1>Wastewater Math Test</h1>
+  <h1>WW Math Generator (Admin)</h1>
+  <p class="small">
+    This page generates a large question bank and downloads it as <b>questions.json</b>.
+    Answers are shown because this is an admin generator tool (quiz UI will hide answers later).
+  </p>
 
-  <button onclick="run()">Run Test</button>
+  <div class="card">
+    <div class="row">
+      <label>Per family:
+        <input id="perFamily" type="number" min="1" max="5000" value="500">
+      </label>
 
-  <pre id="out"></pre>
-<script>
-  // -----------------------------
-  // Question generator
-  // -----------------------------
+      <label>Difficulty:
+        <select id="difficulty">
+          <option value="mixed" selected>Mixed</option>
+          <option value="easy">Easy</option>
+          <option value="normal">Normal</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
 
-  const questions = [
-    {
-      id: "detention_time_basic",
-      difficulty: "easy",
-      generate: function () {
-        const flowMGD = +(Math.random() * 4 + 1).toFixed(2);
-        const volumeMG = +(Math.random() * 10 + 2).toFixed(2);
-        const detentionTime = +(volumeMG / flowMGD).toFixed(2);
+      <label>Question types:
+        <select id="qtype">
+          <option value="mixed" selected>Mixed</option>
+          <option value="conversion">Conversion only</option>
+          <option value="formula">Formula only</option>
+          <option value="formula+unit">Formula + required unit</option>
+        </select>
+      </label>
 
-        return {
-          question:
-            "A wastewater plant has a flow of " + flowMGD + " MGD " +
-            "and a basin volume of " + volumeMG + " MG.\n\n" +
-            "What is the detention time in days?",
+      <button id="btnGenerate">Generate Bank</button>
+      <button id="btnDownload" disabled>Download questions.json</button>
+    </div>
 
-          answer:
-            detentionTime + " days"
-        };
-      }
+    <div class="row small">
+      <div>Status: <span id="status" class="bad">Idle</span></div>
+      <div>Families: <span id="families">0</span></div>
+      <div>Target: <span id="target">0</span></div>
+      <div>Accepted: <span id="accepted">0</span></div>
+      <div>Rejected: <span id="rejected">0</span></div>
+      <div>Elapsed: <span id="elapsed">0.0</span>s</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="small">Preview (first 5 questions):</div>
+    <pre id="preview">(none)</pre>
+  </div>
+
+  <script>
+    // =========================
+    // Core: utilities
+    // =========================
+    function rand() { return Math.random(); }
+    function pick(arr) { return arr[Math.floor(rand() * arr.length)]; }
+    function uid(prefix) { return prefix + "-" + Math.floor(Date.now() * rand()).toString(36); }
+
+    function downloadJSON(filename, obj) {
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     }
-  ];
 
-  // -----------------------------
-  // Run one question
-  // -----------------------------
+    function fmt(n, decimals=2) {
+      if (!Number.isFinite(n)) return String(n);
+      const s = n.toFixed(decimals).replace(/\.?0+$/, "");
+      return s;
+    }
 
-  function run() {
-    const q = questions[0].generate();
+    // =========================
+    // Formula registry (we will fill this next)
+    // Each family must implement:
+    // - family: string
+    // - generate(opts) => { question, answer, difficulty, type, meta }
+    // =========================
+    const FORMULAS = [
+      // Placeholder so UI works right now.
+      // Next step we replace this placeholder with ALL families.
+      {
+        family: "Detention Time",
+        generate: (opts) => {
+          const flowMGD = +(rand() * 4 + 1).toFixed(2);
+          const volumeMG = +(rand() * 10 + 2).toFixed(2);
+          const days = volumeMG / flowMGD;
 
-    document.getElementById("out").textContent =
-      "QUESTION:\n\n" +
-      q.question +
-      "\n\nANSWER:\n" +
-      q.answer;
-  }
-</script>
-  
+          return {
+            type: "formula+unit",
+            difficulty: "easy",
+            question: `A plant has a flow of ${flowMGD} MGD and a volume of ${volumeMG} MG. What is detention time in days?`,
+            answer: `${fmt(days, 2)} days`,
+            meta: { flowMGD, volumeMG }
+          };
+        }
+      }
+    ];
+
+    // =========================
+    // Generator engine
+    // =========================
+    let BANK = null;
+
+    async function generateBank() {
+      const perFamily = Number(document.getElementById("perFamily").value || 500);
+      const difficulty = document.getElementById("difficulty").value;
+      const qtype = document.getElementById("qtype").value;
+
+      const status = document.getElementById("status");
+      const familiesEl = document.getElementById("families");
+      const targetEl = document.getElementById("target");
+      const acceptedEl = document.getElementById("accepted");
+      const rejectedEl = document.getElementById("rejected");
+      const elapsedEl = document.getElementById("elapsed");
+      const previewEl = document.getElementById("preview");
+      const btnDownload = document.getElementById("btnDownload");
+
+      BANK = null;
+      btnDownload.disabled = true;
+
+      const start = performance.now();
+      status.textContent = "Generating...";
+      status.className = "ok";
+
+      const families = FORMULAS.map(f => f.family);
+      familiesEl.textContent = String(families.length);
+      targetEl.textContent = String(families.length * perFamily);
+
+      const out = {
+        generated_at: new Date().toISOString(),
+        settings: { perFamily, difficulty, qtype },
+        families,
+        questions: []
+      };
+
+      let accepted = 0;
+      let rejected = 0;
+
+      // Cap attempts so we never infinite loop if a family is too strict.
+      const MAX_ATTEMPTS_PER_FAMILY = perFamily * 50;
+
+      for (const fam of FORMULAS) {
+        let got = 0;
+        let attempts = 0;
+
+        while (got < perFamily && attempts < MAX_ATTEMPTS_PER_FAMILY) {
+          attempts++;
+
+          const q = fam.generate({ difficulty, qtype });
+
+          // Filters (we’ll make these smarter later)
+          if (qtype !== "mixed" && q.type !== qtype) { rejected++; continue; }
+          if (difficulty !== "mixed" && q.difficulty !== difficulty) { rejected++; continue; }
+
+          // Basic sanity: must have question+answer
+          if (!q.question || !q.answer) { rejected++; continue; }
+
+          out.questions.push({
+            id: uid(fam.family.replace(/\s+/g, "_")),
+            family: fam.family,
+            type: q.type,
+            difficulty: q.difficulty,
+            question: q.question,
+            answer: q.answer,
+            meta: q.meta || {}
+          });
+
+          got++;
+          accepted++;
+          if (accepted % 100 === 0) {
+            acceptedEl.textContent = String(accepted);
+            rejectedEl.textContent = String(rejected);
+            elapsedEl.textContent = ((performance.now() - start)/1000).toFixed(1);
+            await new Promise(r => setTimeout(r, 0)); // allow UI to breathe
+          }
+        }
+
+        acceptedEl.textContent = String(accepted);
+        rejectedEl.textContent = String(rejected);
+        elapsedEl.textContent = ((performance.now() - start)/1000).toFixed(1);
+      }
+
+      BANK = out;
+      btnDownload.disabled = false;
+
+      previewEl.textContent = JSON.stringify(out.questions.slice(0, 5), null, 2);
+      status.textContent = "Done";
+      status.className = "ok";
+    }
+
+    // =========================
+    // Wire UI
+    // =========================
+    document.getElementById("btnGenerate").addEventListener("click", () => {
+      generateBank().catch(e => {
+        console.error(e);
+        const status = document.getElementById("status");
+        status.textContent = "ERROR: " + (e?.message || e);
+        status.className = "bad";
+      });
+    });
+
+    document.getElementById("btnDownload").addEventListener("click", () => {
+      if (!BANK) return;
+      downloadJSON("questions.json", BANK);
+    });
+  </script>
 </body>
 </html>
-
-
-
 
