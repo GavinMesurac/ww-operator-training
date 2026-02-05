@@ -294,6 +294,605 @@ const FORMULAS = [
       return { type, difficulty, question, answer, meta: { flow, area } };
     }
   }
+  ,
+  // =========================
+  // Batch 3 – Clarifier Rates
+  // =========================
+
+  {
+    family: "Surface Overflow Rate (SOR)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const flowMGD =
+        +(rand() * (difficulty === "hard" ? 25 : difficulty === "normal" ? 12 : 6) + 0.5).toFixed(2);
+      const areaFt2 =
+        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
+
+      const gpd = flowMGD * 1_000_000;
+      const sor = gpd / areaFt2;
+
+      const question =
+        `A clarifier treats ${flowMGD} MGD and has a surface area of ${areaFt2} ft².\n\n` +
+        `What is the surface overflow rate (gpd/ft²)?`;
+
+      const answer = `${fmt(sor, 0)} gpd/ft²`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { flowMGD, areaFt2 }
+      };
+    }
+  },
+
+  {
+    family: "Weir Overflow Rate (WOR)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const flowMGD =
+        +(rand() * (difficulty === "hard" ? 25 : difficulty === "normal" ? 12 : 6) + 0.5).toFixed(2);
+      const weirFt =
+        Math.round(rand() * (difficulty === "hard" ? 1200 : difficulty === "normal" ? 700 : 350) + 100);
+
+      const gpd = flowMGD * 1_000_000;
+      const wor = gpd / weirFt;
+
+      const question =
+        `A clarifier receives ${flowMGD} MGD and has a total weir length of ${weirFt} ft.\n\n` +
+        `What is the weir overflow rate (gpd/ft)?`;
+
+      const answer = `${fmt(wor, 0)} gpd/ft`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { flowMGD, weirFt }
+      };
+    }
+  },
+
+  {
+    family: "Solids Loading Rate (SLR)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const solidsLbDay =
+        Math.round(rand() * (difficulty === "hard" ? 40000 : difficulty === "normal" ? 20000 : 8000) + 2000);
+      const areaFt2 =
+        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
+
+      const slr = solidsLbDay / areaFt2;
+
+      const question =
+        `A clarifier receives ${solidsLbDay} lb/day of solids and has a surface area of ${areaFt2} ft².\n\n` +
+        `What is the solids loading rate (lb/day/ft²)?`;
+
+      const answer = `${fmt(slr, 2)} lb/day/ft²`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { solidsLbDay, areaFt2 }
+      };
+    }
+  }
+  ,
+  // =========================
+  // Batch 4 – Pumps & Electrical
+  // =========================
+
+  {
+    family: "Pump Power (HP)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const flowGPM =
+        Math.round(rand() * (difficulty === "hard" ? 6000 : difficulty === "normal" ? 3000 : 1500) + 200);
+      const headFt =
+        Math.round(rand() * (difficulty === "hard" ? 180 : difficulty === "normal" ? 120 : 60) + 20);
+      const efficiency =
+        +(rand() * (difficulty === "hard" ? 0.25 : difficulty === "normal" ? 0.20 : 0.15) + 0.65).toFixed(2);
+
+      // HP = (Q * H) / (3960 * eff)
+      const hp = (flowGPM * headFt) / (3960 * efficiency);
+
+      const question =
+        `A pump delivers ${flowGPM} gpm against a head of ${headFt} ft ` +
+        `with an efficiency of ${(efficiency * 100).toFixed(0)}%.\n\n` +
+        `What is the required pump horsepower?`;
+
+      const answer = `${fmt(hp, 2)} HP`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { flowGPM, headFt, efficiency }
+      };
+    }
+  },
+
+  {
+    family: "Electrical Power (kW)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const volts =
+        Math.round(rand() * (difficulty === "hard" ? 460 : difficulty === "normal" ? 240 : 120) + 120);
+      const amps =
+        +(rand() * (difficulty === "hard" ? 150 : difficulty === "normal" ? 80 : 40) + 5).toFixed(1);
+      const phases = pick([1, 3]);
+      const pf =
+        +(rand() * (difficulty === "hard" ? 0.25 : difficulty === "normal" ? 0.20 : 0.15) + 0.75).toFixed(2);
+
+      // kW = (V * I * √3 * PF) / 1000 for 3-phase, else (V * I * PF) / 1000
+      const kw = phases === 3
+        ? (volts * amps * 1.732 * pf) / 1000
+        : (volts * amps * pf) / 1000;
+
+      const phaseText = phases === 3 ? "three-phase" : "single-phase";
+
+      const question =
+        `A ${phaseText} motor operates at ${volts} volts and draws ${amps} amps ` +
+        `with a power factor of ${pf}.\n\n` +
+        `What is the electrical power in kW?`;
+
+      const answer = `${fmt(kw, 2)} kW`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { volts, amps, phases, pf }
+      };
+    }
+  },
+
+  {
+    family: "Energy Use (kWh/day)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const kw =
+        +(rand() * (difficulty === "hard" ? 250 : difficulty === "normal" ? 120 : 60) + 5).toFixed(1);
+      const hours =
+        Math.round(rand() * (difficulty === "hard" ? 24 : difficulty === "normal" ? 16 : 12) + 1);
+
+      const kwhDay = kw * hours;
+
+      const question =
+        `A piece of equipment operates at ${kw} kW for ${hours} hours per day.\n\n` +
+        `What is the daily energy use in kWh/day?`;
+
+      const answer = `${fmt(kwhDay, 1)} kWh/day`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { kw, hours }
+      };
+    }
+  }
+  ,
+  // =========================
+  // Batch 5 – Lab & Chemistry
+  // =========================
+
+  {
+    family: "BOD (Unseeded)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const initialDO =
+        +(rand() * (difficulty === "hard" ? 8 : 6) + 2).toFixed(1);
+      const finalDO =
+        +(rand() * (difficulty === "hard" ? 2 : 1.5) + 0.2).toFixed(1);
+      const sampleML =
+        pick([10, 15, 20, 25, 50]);
+
+      const bod = ((initialDO - finalDO) * 300) / sampleML;
+
+      const question =
+        `An unseeded BOD test has an initial DO of ${initialDO} mg/L ` +
+        `and a final DO of ${finalDO} mg/L using a ${sampleML} mL sample.\n\n` +
+        `What is the BOD in mg/L?`;
+
+      const answer = `${fmt(bod, 1)} mg/L`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { initialDO, finalDO, sampleML }
+      };
+    }
+  },
+
+  {
+    family: "BOD (Seeded)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const initialDO =
+        +(rand() * (difficulty === "hard" ? 8 : 6) + 2).toFixed(1);
+      const finalDO =
+        +(rand() * (difficulty === "hard" ? 2 : 1.5) + 0.2).toFixed(1);
+      const seedCorrection =
+        +(rand() * (difficulty === "hard" ? 1.5 : 1.0) + 0.1).toFixed(2);
+      const sampleML =
+        pick([10, 15, 20, 25, 50]);
+
+      const bod = ((initialDO - finalDO - seedCorrection) * 300) / sampleML;
+
+      const question =
+        `A seeded BOD test has an initial DO of ${initialDO} mg/L, ` +
+        `a final DO of ${finalDO} mg/L, and a seed correction of ${seedCorrection} mg/L ` +
+        `using a ${sampleML} mL sample.\n\n` +
+        `What is the BOD in mg/L?`;
+
+      const answer = `${fmt(bod, 1)} mg/L`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { initialDO, finalDO, seedCorrection, sampleML }
+      };
+    }
+  },
+
+  {
+    family: "Alkalinity (as CaCO₃)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const acidML =
+        +(rand() * (difficulty === "hard" ? 25 : 15) + 5).toFixed(1);
+      const normality =
+        pick([0.02, 0.05, 0.1]);
+      const sampleML =
+        pick([50, 100, 200]);
+
+      // mg/L as CaCO3 = (mL acid * N * 50,000) / mL sample
+      const alk = (acidML * normality * 50000) / sampleML;
+
+      const question =
+        `A ${sampleML} mL sample requires ${acidML} mL of ${normality} N acid.\n\n` +
+        `What is the alkalinity as CaCO₃ (mg/L)?`;
+
+      const answer = `${fmt(alk, 0)} mg/L as CaCO₃`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { acidML, normality, sampleML }
+      };
+    }
+  },
+
+  {
+    family: "Dissolved Oxygen Deficit",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const saturationDO =
+        +(rand() * (difficulty === "hard" ? 10 : 8) + 6).toFixed(1);
+      const actualDO =
+        +(rand() * (difficulty === "hard" ? 4 : 3) + 0.5).toFixed(1);
+
+      const deficit = saturationDO - actualDO;
+
+      const question =
+        `The DO saturation is ${saturationDO} mg/L and the measured DO is ${actualDO} mg/L.\n\n` +
+        `What is the dissolved oxygen deficit?`;
+
+      const answer = `${fmt(deficit, 1)} mg/L`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { saturationDO, actualDO }
+      };
+    }
+  }
+  ,
+  // =========================
+  // Batch 6 – Filters & Backwash
+  // =========================
+
+  {
+    family: "Filter Backwash Rate",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const areaFt2 =
+        Math.round(rand() * (difficulty === "hard" ? 1200 : difficulty === "normal" ? 600 : 300) + 50);
+      const flowGPM =
+        Math.round(rand() * (difficulty === "hard" ? 2500 : difficulty === "normal" ? 1500 : 800) + 200);
+
+      const rate = flowGPM / areaFt2;
+
+      const units = pick(["gpm/ft²", "L/m²·min"]);
+      const answerValue = units === "gpm/ft²"
+        ? rate
+        : rate * 40.74; // gpm/ft² → L/m²·min
+
+      const question =
+        `A filter has an area of ${areaFt2} ft² and is backwashed at ${flowGPM} gpm.\n\n` +
+        `What is the backwash rate in ${units}?`;
+
+      const answer = `${fmt(answerValue, 2)} ${units}`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { areaFt2, flowGPM }
+      };
+    }
+  },
+
+  {
+    family: "Filter Backwash Rise Rate",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const expansionIn =
+        +(rand() * (difficulty === "hard" ? 18 : difficulty === "normal" ? 12 : 8) + 2).toFixed(1);
+      const timeMin =
+        Math.round(rand() * (difficulty === "hard" ? 15 : difficulty === "normal" ? 10 : 6) + 2);
+
+      const rateInMin = expansionIn / timeMin;
+
+      const units = pick(["in/min", "cm/min"]);
+      const answerValue = units === "in/min"
+        ? rateInMin
+        : rateInMin * 2.54;
+
+      const question =
+        `A filter bed expands ${expansionIn} inches in ${timeMin} minutes during backwash.\n\n` +
+        `What is the rise rate in ${units}?`;
+
+      const answer = `${fmt(answerValue, 2)} ${units}`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { expansionIn, timeMin }
+      };
+    }
+  },
+
+  {
+    family: "Filter Yield",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const massLb =
+        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
+      const areaFt2 =
+        Math.round(rand() * (difficulty === "hard" ? 1000 : difficulty === "normal" ? 500 : 250) + 50);
+      const hours =
+        Math.round(rand() * (difficulty === "hard" ? 12 : difficulty === "normal" ? 8 : 6) + 1);
+
+      const rateLb = massLb / (areaFt2 * hours);
+
+      const units = pick(["lb/hr/ft²", "kg/hr/m²"]);
+      const answerValue = units === "lb/hr/ft²"
+        ? rateLb
+        : rateLb * 4.882; // lb/ft²·hr → kg/m²·hr
+
+      const question =
+        `A filter produces ${massLb} lb of solids over ${hours} hours ` +
+        `with an area of ${areaFt2} ft².\n\n` +
+        `What is the filter yield in ${units}?`;
+
+      const answer = `${fmt(answerValue, 3)} ${units}`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { massLb, areaFt2, hours }
+      };
+    }
+  },
+
+  {
+    family: "Hydraulic Loading (Areal)",
+    generate: (opts) => {
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
+
+      const flowMGD =
+        +(rand() * (difficulty === "hard" ? 25 : difficulty === "normal" ? 12 : 6) + 0.5).toFixed(2);
+      const areaFt2 =
+        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
+
+      const gpd = flowMGD * 1_000_000;
+      const loading = gpd / areaFt2;
+
+      const units = pick(["gpd/ft²", "gpd/m²"]);
+      const answerValue = units === "gpd/ft²"
+        ? loading
+        : loading * 10.764;
+
+      const question =
+        `A process treats ${flowMGD} MGD with a surface area of ${areaFt2} ft².\n\n` +
+        `What is the hydraulic loading rate in ${units}?`;
+
+      const answer = `${fmt(answerValue, 0)} ${units}`;
+
+      return {
+        type: "formula+unit",
+        difficulty,
+        question,
+        answer,
+        meta: { flowMGD, areaFt2 }
+      };
+    }
+  }
+  ,
+  // =========================
+  // Batch 7 – Experimental / Edge
+  // =========================
+
+  {
+    family: "Weir Flow (Experimental)",
+    generate: () => {
+      const lengthFt = +(rand() * 20 + 2).toFixed(1);
+      const headFt = +(rand() * 1.2 + 0.2).toFixed(2);
+
+      // Q = 3.33 * L * H^(3/2)
+      const flowCFS = 3.33 * lengthFt * Math.pow(headFt, 1.5);
+
+      const question =
+        `A rectangular weir has a crest length of ${lengthFt} ft ` +
+        `and a head of ${headFt} ft.\n\n` +
+        `Estimate the flow rate in ft³/sec. (Experimental)`;
+
+      const answer = `${fmt(flowCFS, 2)} ft³/sec`;
+
+      return {
+        type: "formula+unit",
+        difficulty: "hard",
+        question,
+        answer,
+        meta: { lengthFt, headFt, experimental: true }
+      };
+    }
+  },
+
+  {
+    family: "Multi-Step Conversion",
+    generate: () => {
+      const flowMGD = +(rand() * 8 + 1).toFixed(2);
+
+      // MGD → gpd → gpm
+      const gpd = flowMGD * 1_000_000;
+      const gpm = gpd / 1440;
+
+      const question =
+        `A plant treats ${flowMGD} MGD.\n\n` +
+        `Convert this flow to gallons per minute (gpm).`;
+
+      const answer = `${fmt(gpm, 1)} gpm`;
+
+      return {
+        type: "conversion",
+        difficulty: "normal",
+        question,
+        answer,
+        meta: { flowMGD }
+      };
+    }
+  },
+
+  {
+    family: "Generic Detention Time (Any Volume)",
+    generate: () => {
+      const volumeGal =
+        Math.round(rand() * 8_000_000 + 500_000);
+      const flowGPM =
+        Math.round(rand() * 6000 + 300);
+
+      const volumeGalPerMin = flowGPM;
+      const minutes = volumeGal / volumeGalPerMin;
+      const hours = minutes / 60;
+
+      const question =
+        `A process unit has a volume of ${volumeGal.toLocaleString()} gallons ` +
+        `and a flow of ${flowGPM} gpm.\n\n` +
+        `What is the detention time in hours?`;
+
+      const answer = `${fmt(hours, 2)} hours`;
+
+      return {
+        type: "formula+unit",
+        difficulty: "normal",
+        question,
+        answer,
+        meta: { volumeGal, flowGPM }
+      };
+    }
+  },
+
+  {
+    family: "Extra Information Stress Question",
+    generate: () => {
+      const flowMGD = +(rand() * 6 + 1).toFixed(2);
+      const areaFt2 = Math.round(rand() * 4000 + 800);
+      const tempF = Math.round(rand() * 40 + 45); // irrelevant
+      const ph = +(rand() * 1.5 + 6.5).toFixed(1); // irrelevant
+
+      const gpd = flowMGD * 1_000_000;
+      const loading = gpd / areaFt2;
+
+      const question =
+        `A clarifier treats ${flowMGD} MGD and has an area of ${areaFt2} ft².\n` +
+        `The wastewater temperature is ${tempF}°F and the pH is ${ph}.\n\n` +
+        `What is the surface loading rate (gpd/ft²)?`;
+
+      const answer = `${fmt(loading, 0)} gpd/ft²`;
+
+      return {
+        type: "formula+unit",
+        difficulty: "hard",
+        question,
+        answer,
+        meta: { flowMGD, areaFt2, tempF, ph }
+      };
+    }
+  }
 
 ];
 
