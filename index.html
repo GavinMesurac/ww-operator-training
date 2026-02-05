@@ -97,26 +97,108 @@
     // - family: string
     // - generate(opts) => { question, answer, difficulty, type, meta }
     // =========================
-    const FORMULAS = [
-      // Placeholder so UI works right now.
-      // Next step we replace this placeholder with ALL families.
-      {
-        family: "Detention Time",
-        generate: (opts) => {
-          const flowMGD = +(rand() * 4 + 1).toFixed(2);
-          const volumeMG = +(rand() * 10 + 2).toFixed(2);
-          const days = volumeMG / flowMGD;
+const FORMULAS = [
+  // -------------------------
+  // Helpers for this batch
+  // -------------------------
+  {
+    family: "Detention Time",
+    generate: (opts) => {
+      // pick type
+      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
 
-          return {
-            type: "formula+unit",
-            difficulty: "easy",
-            question: `A plant has a flow of ${flowMGD} MGD and a volume of ${volumeMG} MG. What is detention time in days?`,
-            answer: `${fmt(days, 2)} days`,
-            meta: { flowMGD, volumeMG }
-          };
-        }
-      }
-    ];
+      // difficulty affects ranges a bit
+      const flowMGD = +(rand() * (difficulty === "hard" ? 15 : difficulty === "normal" ? 8 : 4) + 0.5).toFixed(2);
+      const volumeMG = +(rand() * (difficulty === "hard" ? 60 : difficulty === "normal" ? 25 : 12) + 1).toFixed(2);
+
+      // DT (days) = V(MG) / Q(MGD)
+      const dtDays = volumeMG / flowMGD;
+
+      let questionUnit = "days";
+      if (type === "formula+unit") questionUnit = pick(["days", "hours"]);
+
+      const answerValue = (questionUnit === "hours") ? dtDays * 24 : dtDays;
+      const answer = `${fmt(answerValue, 2)} ${questionUnit}`;
+
+      const question =
+        `A plant has a flow of ${flowMGD} MGD and a basin volume of ${volumeMG} MG.\n\n` +
+        `What is the detention time in ${questionUnit}?`;
+
+      return { type, difficulty, question, answer, meta: { flowMGD, volumeMG } };
+    }
+  },
+
+  {
+    family: "Mass Loading (lb/day)",
+    generate: (opts) => {
+      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+
+      const conc = Math.round(rand() * (difficulty === "hard" ? 600 : difficulty === "normal" ? 350 : 200) + 50); // mg/L
+      const flow = +(rand() * (difficulty === "hard" ? 20 : difficulty === "normal" ? 8 : 5) + 0.5).toFixed(2);   // MGD
+
+      // lb/day = mg/L * MGD * 8.34
+      const lbsDay = conc * flow * 8.34;
+
+      const questionUnit = (type === "formula+unit") ? "lb/day" : "lb/day";
+      const answer = `${fmt(lbsDay, 1)} ${questionUnit}`;
+
+      // occasional irrelevant info (annoying but feasible)
+      const extra = (rand() < 0.25)
+        ? `\n\nAdditional info (not needed): Temperature is ${Math.round(rand()*30+50)} F.`
+        : "";
+
+      const question =
+        `An influent concentration is ${conc} mg/L and the flow is ${flow} MGD.\n\n` +
+        `What is the mass loading in ${questionUnit}?` + extra;
+
+      return { type, difficulty, question, answer, meta: { conc_mgL: conc, flow_MGD: flow } };
+    }
+  },
+
+  // -------------------------
+  // Conversion-only family
+  // -------------------------
+  {
+    family: "Flow & Volume Conversions",
+    generate: (opts) => {
+      const type = "conversion";
+      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+
+      const conversions = [
+        { from: "MGD", to: "gpm", fn: (v) => (v * 1_000_000) / 1440 },
+        { from: "gpm", to: "MGD", fn: (v) => (v * 1440) / 1_000_000 },
+        { from: "gpd", to: "MGD", fn: (v) => v / 1_000_000 },
+        { from: "MGD", to: "gpd", fn: (v) => v * 1_000_000 },
+        { from: "MG",  to: "gal", fn: (v) => v * 1_000_000 },
+        { from: "gal", to: "MG",  fn: (v) => v / 1_000_000 }
+      ];
+
+      const c = pick(conversions);
+
+      // make "nice" numbers to avoid crazy outputs
+      let value;
+      if (c.from === "MGD") value = +(rand() * (difficulty === "hard" ? 25 : 10) + 0.25).toFixed(2);
+      else if (c.from === "gpm") value = Math.round(rand() * (difficulty === "hard" ? 30_000 : 10_000) + 100);
+      else if (c.from === "gpd") value = Math.round(rand() * (difficulty === "hard" ? 30_000_000 : 10_000_000) + 50_000);
+      else if (c.from === "MG")  value = +(rand() * (difficulty === "hard" ? 150 : 50) + 0.1).toFixed(2);
+      else if (c.from === "gal") value = Math.round(rand() * (difficulty === "hard" ? 80_000_000 : 20_000_000) + 10_000);
+      else value = +(rand() * 10 + 1).toFixed(2);
+
+      const result = c.fn(value);
+
+      // rounding rule: conversions can be whole or 2 decimals depending on magnitude
+      const decimals = Math.abs(result) < 100 ? 2 : 1;
+      const answer = `${fmt(result, decimals)} ${c.to}`;
+
+      const question =
+        `Convert ${value} ${c.from} to ${c.to}.`;
+
+      return { type, difficulty, question, answer, meta: { from: c.from, to: c.to, value } };
+    }
+  }
+];
 
     // =========================
     // Generator engine
