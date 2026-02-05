@@ -1,27 +1,14 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>WW Test</title>
-</head>
-<body>
-  <h1>Wastewater Math Test</h1>
+<script>
+  function run() {
+    const flowMGD = (Math.random() * 4 + 1).toFixed(2);
+    const volumeMG = (Math.random() * 10 + 2).toFixed(2);
+    const dt = (volumeMG / flowMGD).toFixed(2);
 
-  <button onclick="run()">Run Test</button>
-
-  <pre id="out"></pre>
-
-  <script>
-    function run() {
-      const flowMGD = 2;
-      const volumeMG = 6;
-      const dt = volumeMG / flowMGD;
-
-      document.getElementById("out").textContent =
-        "Flow: 2 MGD\n" +
-        "Volume: 6 MG\n" +
-        "Detention Time: " + dt + " days";
-    }
-  </script>
-</body>
-</html>
+    document.getElementById("out").textContent =
+      "QUESTION:\n" +
+      "A plant has a flow of " + flowMGD + " MGD\n" +
+      "and a volume of " + volumeMG + " MG.\n\n" +
+      "ANSWER:\n" +
+      "Detention Time = " + dt + " days";
+  }
+</script>
