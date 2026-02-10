@@ -101,33 +101,81 @@ const FORMULAS = [
   // -------------------------
   // Helpers for this batch
   // -------------------------
-  {
-    family: "Detention Time",
-    generate: (opts) => {
-      // pick type
-      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+{
+  family: "Detention Time",
+  generate: (opts) => {
+    const type =
+      (opts.qtype && opts.qtype !== "mixed")
+        ? opts.qtype
+        : pick(["formula", "formula+unit"]);
 
-      // difficulty affects ranges a bit
-      const flowMGD = +(rand() * (difficulty === "hard" ? 15 : difficulty === "normal" ? 8 : 4) + 0.5).toFixed(2);
-      const volumeMG = +(rand() * (difficulty === "hard" ? 60 : difficulty === "normal" ? 25 : 12) + 1).toFixed(2);
+    const difficulty =
+      (opts.difficulty && opts.difficulty !== "mixed")
+        ? opts.difficulty
+        : pick(["easy", "normal", "hard"]);
 
-      // DT (days) = V(MG) / Q(MGD)
+    // Decide unit system (US or Metric)
+    const unitsMode =
+      (opts.unitsMode === "us" || opts.unitsMode === "metric")
+        ? opts.unitsMode
+        : pick(["us", "metric"]);
+
+    let question, answer;
+
+    if (unitsMode === "us") {
+      // ---------- US VERSION ----------
+      const flowMGD =
+        +(rand() * (difficulty === "hard" ? 15 : difficulty === "normal" ? 8 : 4) + 0.5).toFixed(2);
+
+      const volumeMG =
+        +(rand() * (difficulty === "hard" ? 60 : difficulty === "normal" ? 25 : 12) + 1).toFixed(2);
+
       const dtDays = volumeMG / flowMGD;
 
-      let questionUnit = "days";
-      if (type === "formula+unit") questionUnit = pick(["days", "hours"]);
+      const outUnit =
+        (type === "formula+unit") ? pick(["days", "hours"]) : "days";
 
-      const answerValue = (questionUnit === "hours") ? dtDays * 24 : dtDays;
-      const answer = `${fmt(answerValue, 2)} ${questionUnit}`;
+      const value =
+        (outUnit === "hours") ? dtDays * 24 : dtDays;
 
-      const question =
+      question =
         `A plant has a flow of ${flowMGD} MGD and a basin volume of ${volumeMG} MG.\n\n` +
-        `What is the detention time in ${questionUnit}?`;
+        `What is the detention time in ${outUnit}?`;
 
-      return { type, difficulty, question, answer, meta: { flowMGD, volumeMG } };
+      answer = `${fmt(value, 2)} ${outUnit}`;
+    } else {
+      // ---------- METRIC VERSION ----------
+      const flow_m3_day =
+        Math.round(rand() * (difficulty === "hard" ? 60000 : difficulty === "normal" ? 30000 : 15000) + 2000);
+
+      const volume_m3 =
+        Math.round(rand() * (difficulty === "hard" ? 400000 : difficulty === "normal" ? 200000 : 100000) + 5000);
+
+      const dtDays = volume_m3 / flow_m3_day;
+
+      const outUnit =
+        (type === "formula+unit") ? pick(["days", "hours"]) : "days";
+
+      const value =
+        (outUnit === "hours") ? dtDays * 24 : dtDays;
+
+      question =
+        `A process has a flow of ${flow_m3_day.toLocaleString()} m³/day ` +
+        `and a volume of ${volume_m3.toLocaleString()} m³.\n\n` +
+        `What is the detention time in ${outUnit}?`;
+
+      answer = `${fmt(value, 2)} ${outUnit}`;
     }
-  },
+
+    return {
+      type,
+      difficulty,
+      question,
+      answer,
+      meta: { unitsMode }
+    };
+  }
+
 
   {
     family: "Mass Loading (lb/day)",
