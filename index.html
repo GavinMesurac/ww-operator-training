@@ -45,6 +45,14 @@
           <option value="formula+unit">Formula + required unit</option>
         </select>
       </label>
+      
+<label>Units:
+  <select id="unitsMode">
+    <option value="mixed" selected>Mixed</option>
+    <option value="us">US only</option>
+    <option value="metric">Metric only</option>
+  </select>
+</label>
 
       <button id="btnGenerate">Generate Bank</button>
       <button id="btnDownload" disabled>Download questions.json</button>
@@ -954,7 +962,7 @@ const FORMULAS = [
       const difficulty = document.getElementById("difficulty").value;
       const qtype = document.getElementById("qtype").value;
       const unitsMode = "mixed"; // TEMP: we’ll wire the dropdown later
-
+      const unitsMode = document.getElementById("unitsMode").value;
       
       const status = document.getElementById("status");
       const familiesEl = document.getElementById("families");
@@ -978,7 +986,7 @@ const FORMULAS = [
 
       const out = {
         generated_at: new Date().toISOString(),
-        settings: { perFamily, difficulty, qtype },
+        settings: { perFamily, difficulty, qtype, unitsMode },
         families,
         questions: []
       };
@@ -1009,23 +1017,24 @@ for (const fam of FORMULAS) {
       forcedUnitsMode = (gotUS < targetUS) ? "us" : "metric";
     }
 
-    const q = fam.generate({ difficulty, qtype, unitsMode: forcedUnitsMode });
+    const q = fam.generate({ difficulty, qtype, unitsMode });
 
     // existing filters
     if (qtype !== "mixed" && q.type !== qtype) { rejected++; continue; }
     if (difficulty !== "mixed" && q.difficulty !== difficulty) { rejected++; continue; }
     if (!q.question || !q.answer) { rejected++; continue; }
 
-    out.questions.push({
-      id: uid(fam.family.replace(/\s+/g, "_")),
-      family: fam.family,
-      type: q.type,
-      difficulty: q.difficulty,
-      units_mode: forcedUnitsMode,          // <— store it
-      question: q.question,
-      answer: q.answer,
-      meta: q.meta || {}
-    });
+  out.questions.push({
+    id: uid(fam.family.replace(/\s+/g, "_")),
+    family: fam.family,
+    type: q.type,
+    difficulty: q.difficulty,
+    units_mode: (q.meta && q.meta.unitsMode) ? q.meta.unitsMode : unitsMode,
+    question: q.question,
+    answer: q.answer,
+    meta: q.meta || {}
+  });
+
 
     got++;
     accepted++;
@@ -1053,7 +1062,7 @@ for (const fam of FORMULAS) {
       BANK = out;
       btnDownload.disabled = false;
 
-      previewEl.textContent = JSON.stringify(out.questions.slice(0, 5), null, 2);
+      previewEl.textContent = JSON.stringify(out.questions.slice(0, 20), null, 2);
       status.textContent = "Done";
       status.className = "ok";
     }
