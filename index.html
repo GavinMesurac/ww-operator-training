@@ -250,13 +250,6 @@ const FORMULAS = [
   // =========================
   // Batch 2 – Process Control
   // =========================
-<label>Units:
-  <select id="unitsMode">
-    <option value="mixed50" selected>Mixed (50/50)</option>
-    <option value="us">US only</option>
-    <option value="metric">Metric only</option>
-  </select>
-</label>
 
   {
     family: "F/M Ratio",
@@ -960,7 +953,9 @@ const FORMULAS = [
       const perFamily = Number(document.getElementById("perFamily").value || 500);
       const difficulty = document.getElementById("difficulty").value;
       const qtype = document.getElementById("qtype").value;
+      const unitsMode = "mixed"; // TEMP: we’ll wire the dropdown later
 
+      
       const status = document.getElementById("status");
       const familiesEl = document.getElementById("families");
       const targetEl = document.getElementById("target");
@@ -1045,29 +1040,7 @@ for (const fam of FORMULAS) {
 }
 
 
-          // Filters (we’ll make these smarter later)
-          if (qtype !== "mixed" && q.type !== qtype) { rejected++; continue; }
-          if (difficulty !== "mixed" && q.difficulty !== difficulty) { rejected++; continue; }
 
-          // Basic sanity: must have question+answer
-          if (!q.question || !q.answer) { rejected++; continue; }
-
-          out.questions.push({
-            id: uid(fam.family.replace(/\s+/g, "_")),
-            family: fam.family,
-            type: q.type,
-            difficulty: q.difficulty,
-            question: q.question,
-            answer: q.answer,
-            meta: q.meta || {}
-          });
-
-          got++;
-          accepted++;
-          if (accepted % 100 === 0) {
-            acceptedEl.textContent = String(accepted);
-            rejectedEl.textContent = String(rejected);
-            elapsedEl.textContent = ((performance.now() - start)/1000).toFixed(1);
             await new Promise(r => setTimeout(r, 0)); // allow UI to breathe
           }
         }
