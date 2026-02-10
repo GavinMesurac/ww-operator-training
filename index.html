@@ -202,6 +202,13 @@ const FORMULAS = [
   // =========================
   // Batch 2 – Process Control
   // =========================
+<label>Units:
+  <select id="unitsMode">
+    <option value="mixed50" selected>Mixed (50/50)</option>
+    <option value="us">US only</option>
+    <option value="metric">Metric only</option>
+  </select>
+</label>
 
   {
     family: "F/M Ratio",
@@ -939,14 +946,56 @@ const FORMULAS = [
       // Cap attempts so we never infinite loop if a family is too strict.
       const MAX_ATTEMPTS_PER_FAMILY = perFamily * 50;
 
-      for (const fam of FORMULAS) {
-        let got = 0;
-        let attempts = 0;
+for (const fam of FORMULAS) {
+  let got = 0;
+  let attempts = 0;
 
-        while (got < perFamily && attempts < MAX_ATTEMPTS_PER_FAMILY) {
-          attempts++;
+  // exact split per family when mixed50
+  const targetUS = (unitsMode === "mixed50") ? Math.floor(perFamily / 2) : perFamily;
+  const targetMetric = (unitsMode === "mixed50") ? (perFamily - targetUS) : perFamily;
 
-          const q = fam.generate({ difficulty, qtype });
+  let gotUS = 0;
+  let gotMetric = 0;
+
+  while (got < perFamily && attempts < MAX_ATTEMPTS_PER_FAMILY) {
+    attempts++;
+
+    // Decide which unit system we still need MORE of
+    let forcedUnitsMode = unitsMode;
+    if (unitsMode === "mixed50") {
+      forcedUnitsMode = (gotUS < targetUS) ? "us" : "metric";
+    }
+
+    const q = fam.generate({ difficulty, qtype, unitsMode: forcedUnitsMode });
+
+    // existing filters
+    if (qtype !== "mixed" && q.type !== qtype) { rejected++; continue; }
+    if (difficulty !== "mixed" && q.difficulty !== difficulty) { rejected++; continue; }
+    if (!q.question || !q.answer) { rejected++; continue; }
+
+    out.questions.push({
+      id: uid(fam.family.replace(/\s+/g, "_")),
+      family: fam.family,
+      type: q.type,
+      difficulty: q.difficulty,
+      units_mode: forcedUnitsMode,          // <— store it
+      question: q.question,
+      answer: q.answer,
+      meta: q.meta || {}
+    });
+
+    got++;
+    accepted++;
+
+    if (unitsMode === "mixed50") {
+      if (forcedUnitsMode === "us") gotUS++;
+      else gotMetric++;
+    }
+
+    // (your existing UI update / await breathing stays the same)
+  }
+}
+
 
           // Filters (we’ll make these smarter later)
           if (qtype !== "mixed" && q.type !== qtype) { rejected++; continue; }
