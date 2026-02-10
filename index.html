@@ -10,22 +10,23 @@
     input, select { padding: 8px; font-size: 16px; }
     .card { background: #f6f6f6; border-radius: 10px; padding: 12px; margin: 10px 0; }
     pre { white-space: pre-wrap; background: #111; color: #eee; padding: 12px; border-radius: 10px; overflow: auto; }
-    .small { opacity: 0.8; font-size: 14px; }
+    .small { opacity: 0.85; font-size: 14px; }
     .ok { color: #0a7; font-weight: 700; }
     .bad { color: #c33; font-weight: 700; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
   </style>
 </head>
 <body>
   <h1>WW Math Generator (Admin)</h1>
   <p class="small">
-    This page generates a large question bank and downloads it as <b>questions.json</b>.
-    Answers are shown because this is an admin generator tool (quiz UI will hide answers later).
+    Generates a large question bank and downloads it as <b>questions.json</b>. This is an admin tool (answers shown).
+    Includes US + Metric generation and optional audit download.
   </p>
 
   <div class="card">
     <div class="row">
       <label>Per family:
-        <input id="perFamily" type="number" min="1" max="5000" value="500">
+        <input id="perFamily" type="number" min="1" max="5000" value="200">
       </label>
 
       <label>Difficulty:
@@ -45,17 +46,26 @@
           <option value="formula+unit">Formula + required unit</option>
         </select>
       </label>
-      
-<label>Units:
-  <select id="unitsMode">
-    <option value="mixed" selected>Mixed</option>
-    <option value="us">US only</option>
-    <option value="metric">Metric only</option>
-  </select>
-</label>
+
+      <label>Units:
+        <select id="unitsMode">
+          <option value="mixed50" selected>Mixed (50/50 overall)</option>
+          <option value="us">US only</option>
+          <option value="metric">Metric only</option>
+        </select>
+      </label>
+
+      <label class="small">
+        <input id="includeExperimental" type="checkbox"> include experimental families
+      </label>
+
+      <label class="small">
+        <input id="runAudit" type="checkbox" checked> run audit + QC verify
+      </label>
 
       <button id="btnGenerate">Generate Bank</button>
       <button id="btnDownload" disabled>Download questions.json</button>
+      <button id="btnDownloadAudit" disabled>Download audit.json</button>
     </div>
 
     <div class="row small">
@@ -64,1026 +74,1062 @@
       <div>Target: <span id="target">0</span></div>
       <div>Accepted: <span id="accepted">0</span></div>
       <div>Rejected: <span id="rejected">0</span></div>
+      <div>US: <span id="usCount">0</span></div>
+      <div>Metric: <span id="metricCount">0</span></div>
       <div>Elapsed: <span id="elapsed">0.0</span>s</div>
     </div>
   </div>
 
   <div class="card">
-    <div class="small">Preview (first 5 questions):</div>
+    <div class="small">Preview (first 20 questions):</div>
     <pre id="preview">(none)</pre>
   </div>
 
-  <script>
-    // =========================
-    // Core: utilities
-    // =========================
-    function rand() { return Math.random(); }
-    function pick(arr) { return arr[Math.floor(rand() * arr.length)]; }
-    function uid(prefix) { return prefix + "-" + Math.floor(Date.now() * rand()).toString(36); }
+<script>
+// =========================
+// Utilities
+// =========================
+function rand(){ return Math.random(); }
+function pick(arr){ return arr[Math.floor(rand()*arr.length)]; }
+function uid(prefix){ return prefix + "-" + Math.floor(Date.now()*rand()).toString(36); }
 
-    function downloadJSON(filename, obj) {
-      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
+function downloadJSON(filename, obj) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
-    function fmt(n, decimals=2) {
-      if (!Number.isFinite(n)) return String(n);
-      const s = n.toFixed(decimals).replace(/\.?0+$/, "");
-      return s;
-    }
+function fmt(n, decimals=2) {
+  if (!Number.isFinite(n)) return String(n);
+  const s = n.toFixed(decimals).replace(/\.?0+$/, "");
+  return s;
+}
 
-    // =========================
-    // Formula registry (we will fill this next)
-    // Each family must implement:
-    // - family: string
-    // - generate(opts) => { question, answer, difficulty, type, meta }
-    // =========================
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+function relDiff(a,b){
+  const den = Math.max(1e-12, Math.abs(b));
+  return Math.abs(a-b)/den;
+}
+
+// =========================
+// Conversions / constants
+// =========================
+const C = {
+  GAL_PER_MG: 1_000_000,
+  MIN_PER_DAY: 1440,
+  M3_PER_MGD: 3785.411784, // 1 MGD = 3785.411784 m3/day
+  FT2_PER_M2: 10.763910416709722,
+  M2_PER_FT2: 0.09290304,
+  LB_PER_KG: 2.20462262185,
+  KG_PER_LB: 0.45359237,
+  FT_PER_M: 3.280839895013123,
+  M_PER_FT: 0.3048,
+  CFS_PER_M3S: 35.31466672148859
+};
+
+// =========================
+// Families (US + Metric)
+// Each family must return:
+// { type, difficulty, unitsMode, question, answerText, answerValue, answerUnit, meta }
+// And provide verify(meta) -> {answerValue, answerUnit}
+// =========================
+function chooseDifficulty(d){ return (d && d !== "mixed") ? d : pick(["easy","normal","hard"]); }
+function chooseType(t){ return (t && t !== "mixed") ? t : pick(["conversion","formula","formula+unit"]); }
+function chooseUnits(u){
+  if (u === "us" || u === "metric") return u;
+  return pick(["us","metric"]);
+}
+
+// --- Helper: 8.34 constant for lb/day from mg/L and MGD
+function lbsPerDay_from_mgL_MGD(mgL, MGD){ return mgL * MGD * 8.34; }
+// --- Helper: kg/day from mg/L and m3/day
+function kgPerDay_from_mgL_m3d(mgL, m3d){ return mgL * m3d * 0.001; } // (mg/L)*(m3/d)*0.001 = kg/d
+
 const FORMULAS = [
-  // -------------------------
-  // Helpers for this batch
-  // -------------------------
-{
-  family: "Detention Time",
-  generate: (opts) => {
-    const type =
-      (opts.qtype && opts.qtype !== "mixed")
-        ? opts.qtype
-        : pick(["formula", "formula+unit"]);
-
-    const difficulty =
-      (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
-
-    // Decide unit system (US or Metric)
-    const unitsMode =
-      (opts.unitsMode === "us" || opts.unitsMode === "metric")
-        ? opts.unitsMode
-        : pick(["us", "metric"]);
-
-    let question, answer;
-
-    if (unitsMode === "us") {
-      // ---------- US VERSION ----------
-      const flowMGD =
-        +(rand() * (difficulty === "hard" ? 15 : difficulty === "normal" ? 8 : 4) + 0.5).toFixed(2);
-
-      const volumeMG =
-        +(rand() * (difficulty === "hard" ? 60 : difficulty === "normal" ? 25 : 12) + 1).toFixed(2);
-
-      const dtDays = volumeMG / flowMGD;
-
-      const outUnit =
-        (type === "formula+unit") ? pick(["days", "hours"]) : "days";
-
-      const value =
-        (outUnit === "hours") ? dtDays * 24 : dtDays;
-
-      question =
-        `A plant has a flow of ${flowMGD} MGD and a basin volume of ${volumeMG} MG.\n\n` +
-        `What is the detention time in ${outUnit}?`;
-
-      answer = `${fmt(value, 2)} ${outUnit}`;
-    } else {
-      // ---------- METRIC VERSION ----------
-      const flow_m3_day =
-        Math.round(rand() * (difficulty === "hard" ? 60000 : difficulty === "normal" ? 30000 : 15000) + 2000);
-
-      const volume_m3 =
-        Math.round(rand() * (difficulty === "hard" ? 400000 : difficulty === "normal" ? 200000 : 100000) + 5000);
-
-      const dtDays = volume_m3 / flow_m3_day;
-
-      const outUnit =
-        (type === "formula+unit") ? pick(["days", "hours"]) : "days";
-
-      const value =
-        (outUnit === "hours") ? dtDays * 24 : dtDays;
-
-      question =
-        `A process has a flow of ${flow_m3_day.toLocaleString()} m³/day ` +
-        `and a volume of ${volume_m3.toLocaleString()} m³.\n\n` +
-        `What is the detention time in ${outUnit}?`;
-
-      answer = `${fmt(value, 2)} ${outUnit}`;
-    }
-
-    return {
-      type,
-      difficulty,
-      question,
-      answer,
-      meta: { unitsMode }
-    };
-  }
-
-
   {
-    family: "Mass Loading (lb/day)",
+    family: "Detention Time",
+    is_experimental: false,
     generate: (opts) => {
-      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+      const type = chooseType(opts.qtype);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
 
-      const conc = Math.round(rand() * (difficulty === "hard" ? 600 : difficulty === "normal" ? 350 : 200) + 50); // mg/L
-      const flow = +(rand() * (difficulty === "hard" ? 20 : difficulty === "normal" ? 8 : 5) + 0.5).toFixed(2);   // MGD
+      let outUnit = "days";
+      if (type === "formula+unit") outUnit = pick(["days","hours"]);
 
-      // lb/day = mg/L * MGD * 8.34
-      const lbsDay = conc * flow * 8.34;
+      if (unitsMode === "us") {
+        const flowMGD = +(rand() * (difficulty==="hard"?15:(difficulty==="normal"?8:4)) + 0.5).toFixed(2);
+        const volMG  = +(rand() * (difficulty==="hard"?60:(difficulty==="normal"?25:12)) + 1).toFixed(2);
+        const dtDays = volMG / flowMGD;
+        const val = (outUnit==="hours") ? dtDays*24 : dtDays;
 
-      const questionUnit = (type === "formula+unit") ? "lb/day" : "lb/day";
-      const answer = `${fmt(lbsDay, 1)} ${questionUnit}`;
+        return {
+          type: (type==="conversion") ? "formula+unit" : type,
+          difficulty,
+          unitsMode,
+          question: `A plant has a flow of ${flowMGD} MGD and a volume of ${volMG} MG.\n\nWhat is the detention time in ${outUnit}?`,
+          answerText: `${fmt(val,2)} ${outUnit}`,
+          answerValue: val,
+          answerUnit: outUnit,
+          meta: { flowMGD, volMG, outUnit }
+        };
+      } else {
+        const flow_m3d = Math.round(rand() * (difficulty==="hard"?60000:(difficulty==="normal"?30000:15000)) + 2000);
+        const vol_m3   = Math.round(rand() * (difficulty==="hard"?400000:(difficulty==="normal"?200000:100000)) + 5000);
+        const dtDays = vol_m3 / flow_m3d;
+        const val = (outUnit==="hours") ? dtDays*24 : dtDays;
 
-      // occasional irrelevant info (annoying but feasible)
-      const extra = (rand() < 0.25)
-        ? `\n\nAdditional info (not needed): Temperature is ${Math.round(rand()*30+50)} F.`
-        : "";
-
-      const question =
-        `An influent concentration is ${conc} mg/L and the flow is ${flow} MGD.\n\n` +
-        `What is the mass loading in ${questionUnit}?` + extra;
-
-      return { type, difficulty, question, answer, meta: { conc_mgL: conc, flow_MGD: flow } };
+        return {
+          type: (type==="conversion") ? "formula+unit" : type,
+          difficulty,
+          unitsMode,
+          question: `A process has a flow of ${flow_m3d.toLocaleString()} m³/day and a volume of ${vol_m3.toLocaleString()} m³.\n\nWhat is the detention time in ${outUnit}?`,
+          answerText: `${fmt(val,2)} ${outUnit}`,
+          answerValue: val,
+          answerUnit: outUnit,
+          meta: { flow_m3d, vol_m3, outUnit }
+        };
+      }
+    },
+    verify: (meta, unitsMode) => {
+      const outUnit = meta.outUnit || "days";
+      if (unitsMode === "us") {
+        const dtDays = meta.volMG / meta.flowMGD;
+        const val = (outUnit==="hours") ? dtDays*24 : dtDays;
+        return { answerValue: val, answerUnit: outUnit };
+      } else {
+        const dtDays = meta.vol_m3 / meta.flow_m3d;
+        const val = (outUnit==="hours") ? dtDays*24 : dtDays;
+        return { answerValue: val, answerUnit: outUnit };
+      }
     }
   },
 
-  // -------------------------
-  // Conversion-only family
-  // -------------------------
+  {
+    family: "Mass Loading",
+    is_experimental: false,
+    generate: (opts) => {
+      const type = chooseType(opts.qtype);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+
+      const mgL = Math.round(rand() * (difficulty==="hard"?600:(difficulty==="normal"?350:200)) + 50);
+
+      if (unitsMode === "us") {
+        const flowMGD = +(rand() * (difficulty==="hard"?20:(difficulty==="normal"?8:5)) + 0.5).toFixed(2);
+        const lbsDay = lbsPerDay_from_mgL_MGD(mgL, flowMGD);
+        return {
+          type: (type==="conversion") ? "formula+unit" : type,
+          difficulty,
+          unitsMode,
+          question: `Influent concentration is ${mgL} mg/L and flow is ${flowMGD} MGD.\n\nWhat is the mass loading in lb/day?`,
+          answerText: `${fmt(lbsDay,1)} lb/day`,
+          answerValue: lbsDay,
+          answerUnit: "lb/day",
+          meta: { mgL, flowMGD }
+        };
+      } else {
+        const flow_m3d = Math.round(rand() * (difficulty==="hard"?80000:(difficulty==="normal"?30000:15000)) + 2000);
+        const kgDay = kgPerDay_from_mgL_m3d(mgL, flow_m3d);
+        return {
+          type: (type==="conversion") ? "formula+unit" : type,
+          difficulty,
+          unitsMode,
+          question: `Influent concentration is ${mgL} mg/L and flow is ${flow_m3d.toLocaleString()} m³/day.\n\nWhat is the mass loading in kg/day?`,
+          answerText: `${fmt(kgDay,1)} kg/day`,
+          answerValue: kgDay,
+          answerUnit: "kg/day",
+          meta: { mgL, flow_m3d }
+        };
+      }
+    },
+    verify: (meta, unitsMode) => {
+      if (unitsMode === "us") {
+        return { answerValue: lbsPerDay_from_mgL_MGD(meta.mgL, meta.flowMGD), answerUnit: "lb/day" };
+      } else {
+        return { answerValue: kgPerDay_from_mgL_m3d(meta.mgL, meta.flow_m3d), answerUnit: "kg/day" };
+      }
+    }
+  },
+
   {
     family: "Flow & Volume Conversions",
+    is_experimental: false,
     generate: (opts) => {
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+
+      // Conversion-only family
       const type = "conversion";
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
 
-      const conversions = [
-        { from: "MGD", to: "gpm", fn: (v) => (v * 1_000_000) / 1440 },
-        { from: "gpm", to: "MGD", fn: (v) => (v * 1440) / 1_000_000 },
-        { from: "gpd", to: "MGD", fn: (v) => v / 1_000_000 },
-        { from: "MGD", to: "gpd", fn: (v) => v * 1_000_000 },
-        { from: "MG",  to: "gal", fn: (v) => v * 1_000_000 },
-        { from: "gal", to: "MG",  fn: (v) => v / 1_000_000 }
-      ];
+      let from, to, value, result, answerUnit;
 
-      const c = pick(conversions);
+      if (unitsMode === "us") {
+        const conversions = [
+          { from:"MGD", to:"gpm", gen:()=> +(rand()*(difficulty==="hard"?25:10)+0.25).toFixed(2),
+            fn:(v)=> (v*C.GAL_PER_MG)/C.MIN_PER_DAY },
+          { from:"gpm", to:"MGD", gen:()=> Math.round(rand()*(difficulty==="hard"?30000:10000)+100),
+            fn:(v)=> (v*C.MIN_PER_DAY)/C.GAL_PER_MG },
+          { from:"MG", to:"gal", gen:()=> +(rand()*(difficulty==="hard"?150:50)+0.1).toFixed(2),
+            fn:(v)=> v*C.GAL_PER_MG },
+          { from:"gal", to:"MG", gen:()=> Math.round(rand()*(difficulty==="hard"?80_000_000:20_000_000)+10_000),
+            fn:(v)=> v/C.GAL_PER_MG }
+        ];
+        const c = pick(conversions);
+        from=c.from; to=c.to; value=c.gen(); result=c.fn(value);
+        answerUnit=to;
+      } else {
+        const conversions = [
+          { from:"m³/day", to:"L/s", gen:()=> Math.round(rand()*(difficulty==="hard"?80000:30000)+2000),
+            fn:(v)=> (v*1000)/86400 },
+          { from:"L/s", to:"m³/day", gen:()=> +(rand()*(difficulty==="hard"?600:200)+5).toFixed(1),
+            fn:(v)=> (v*86400)/1000 },
+          { from:"m³", to:"L", gen:()=> Math.round(rand()*(difficulty==="hard"?400000:200000)+5000),
+            fn:(v)=> v*1000 },
+          { from:"L", to:"m³", gen:()=> Math.round(rand()*(difficulty==="hard"?400_000_000:150_000_000)+10000),
+            fn:(v)=> v/1000 }
+        ];
+        const c = pick(conversions);
+        from=c.from; to=c.to; value=c.gen(); result=c.fn(value);
+        answerUnit=to;
+      }
 
-      // make "nice" numbers to avoid crazy outputs
-      let value;
-      if (c.from === "MGD") value = +(rand() * (difficulty === "hard" ? 25 : 10) + 0.25).toFixed(2);
-      else if (c.from === "gpm") value = Math.round(rand() * (difficulty === "hard" ? 30_000 : 10_000) + 100);
-      else if (c.from === "gpd") value = Math.round(rand() * (difficulty === "hard" ? 30_000_000 : 10_000_000) + 50_000);
-      else if (c.from === "MG")  value = +(rand() * (difficulty === "hard" ? 150 : 50) + 0.1).toFixed(2);
-      else if (c.from === "gal") value = Math.round(rand() * (difficulty === "hard" ? 80_000_000 : 20_000_000) + 10_000);
-      else value = +(rand() * 10 + 1).toFixed(2);
-
-      const result = c.fn(value);
-
-      // rounding rule: conversions can be whole or 2 decimals depending on magnitude
       const decimals = Math.abs(result) < 100 ? 2 : 1;
-      const answer = `${fmt(result, decimals)} ${c.to}`;
-
-      const question =
-        `Convert ${value} ${c.from} to ${c.to}.`;
-
-      return { type, difficulty, question, answer, meta: { from: c.from, to: c.to, value } };
-    }
-  }
-    ,
-  // =========================
-  // Batch 2 – Process Control
-  // =========================
+      return {
+        type,
+        difficulty,
+        unitsMode,
+        question: `Convert ${value.toLocaleString ? value.toLocaleString() : value} ${from} to ${to}.`,
+        answerText: `${fmt(result,decimals)} ${to}`,
+        answerValue: result,
+        answerUnit: to,
+        meta: { from, to, value, result }
+      };
+    },
+    verify: (meta, unitsMode) => ({ answerValue: meta.result, answerUnit: meta.to })
+  },
 
   {
     family: "F/M Ratio",
+    is_experimental: false,
     generate: (opts) => {
-      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = (opts.qtype==="conversion") ? "formula" : chooseType(opts.qtype);
 
-      const bodLoad =
-        +(rand() * (difficulty === "hard" ? 6000 : difficulty === "normal" ? 3000 : 1500) + 300).toFixed(0); // lb/day
-      const mlvss =
-        +(rand() * (difficulty === "hard" ? 25000 : difficulty === "normal" ? 12000 : 6000) + 1000).toFixed(0); // lb
+      // Dimensionless; keep same units label
+      const bodLoad = +(rand() * (difficulty==="hard"?6000:(difficulty==="normal"?3000:1500)) + 300).toFixed(0); // lb/d or kg/d
+      const mlvss   = +(rand() * (difficulty==="hard"?25000:(difficulty==="normal"?12000:6000)) + 1000).toFixed(0); // lb or kg
 
       const fm = bodLoad / mlvss;
 
-      const question =
-        `A plant has a 5-day BOD loading of ${bodLoad} lb/day and an MLVSS of ${mlvss} lb.\n\n` +
-        `What is the F/M ratio?`;
+      const loadUnit = (unitsMode==="metric") ? "kg/day" : "lb/day";
+      const massUnit = (unitsMode==="metric") ? "kg" : "lb";
 
-      const answer = `${fmt(fm, 3)}`;
-
-      return { type, difficulty, question, answer, meta: { bodLoad, mlvss } };
-    }
+      return {
+        type: (type==="conversion") ? "formula" : type,
+        difficulty,
+        unitsMode,
+        question: `A plant has a 5-day BOD loading of ${bodLoad} ${loadUnit} and an MLVSS of ${mlvss} ${massUnit}.\n\nWhat is the F/M ratio?`,
+        answerText: `${fmt(fm,3)}`,
+        answerValue: fm,
+        answerUnit: "ratio",
+        meta: { bodLoad, mlvss }
+      };
+    },
+    verify: (meta) => ({ answerValue: meta.bodLoad/meta.mlvss, answerUnit: "ratio" })
   },
 
   {
-    family: "Solids Retention Time (SRT)",
+    family: "SRT (Solids Retention Time)",
+    is_experimental: false,
     generate: (opts) => {
-      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = (opts.qtype==="conversion") ? "formula+unit" : chooseType(opts.qtype);
 
-      const totalSolids =
-        +(rand() * (difficulty === "hard" ? 80000 : difficulty === "normal" ? 40000 : 20000) + 2000).toFixed(0); // lb
-      const solidsWasted =
-        +(rand() * (difficulty === "hard" ? 8000 : difficulty === "normal" ? 4000 : 1500) + 200).toFixed(0); // lb/day
+      const total = +(rand()*(difficulty==="hard"?80000:(difficulty==="normal"?40000:20000))+2000).toFixed(0);
+      const wasted= +(rand()*(difficulty==="hard"?8000:(difficulty==="normal"?4000:1500))+200).toFixed(0);
+      const srt = total / wasted;
 
-      const srt = totalSolids / solidsWasted;
+      const massUnit = (unitsMode==="metric") ? "kg" : "lb";
+      const rateUnit = (unitsMode==="metric") ? "kg/day" : "lb/day";
 
-      const question =
-        `A system contains ${totalSolids} lb of solids and wastes ${solidsWasted} lb/day.\n\n` +
-        `What is the solids retention time (days)?`;
-
-      const answer = `${fmt(srt, 2)} days`;
-
-      return { type, difficulty, question, answer, meta: { totalSolids, solidsWasted } };
-    }
+      return {
+        type,
+        difficulty,
+        unitsMode,
+        question: `A system contains ${total} ${massUnit} of solids and wastes ${wasted} ${rateUnit}.\n\nWhat is the solids retention time (days)?`,
+        answerText: `${fmt(srt,2)} days`,
+        answerValue: srt,
+        answerUnit: "days",
+        meta: { total, wasted }
+      };
+    },
+    verify: (meta) => ({ answerValue: meta.total/meta.wasted, answerUnit: "days" })
   },
 
   {
-    family: "Sludge Volume Index (SVI)",
+    family: "SVI (Sludge Volume Index)",
+    is_experimental: false,
     generate: (opts) => {
-      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = (opts.qtype==="conversion") ? "formula+unit" : chooseType(opts.qtype);
 
-      const settleVol =
-        +(rand() * (difficulty === "hard" ? 400 : difficulty === "normal" ? 250 : 150) + 50).toFixed(0); // mL/L
-      const mlss =
-        +(rand() * (difficulty === "hard" ? 6000 : difficulty === "normal" ? 4000 : 2500) + 1000).toFixed(0); // mg/L
+      const settle = +(rand()*(difficulty==="hard"?400:(difficulty==="normal"?250:150))+50).toFixed(0); // mL/L
+      const mlss   = +(rand()*(difficulty==="hard"?6000:(difficulty==="normal"?4000:2500))+1000).toFixed(0); // mg/L
+      const svi = (settle/mlss)*1000;
 
-      const svi = (settleVol / mlss) * 1000;
-
-      const question =
-        `A sludge settles to ${settleVol} mL/L after 30 minutes and the MLSS is ${mlss} mg/L.\n\n` +
-        `What is the sludge volume index (SVI)?`;
-
-      const answer = `${fmt(svi, 1)} mL/g`;
-
-      return { type, difficulty, question, answer, meta: { settleVol, mlss } };
-    }
+      return {
+        type,
+        difficulty,
+        unitsMode,
+        question: `A sludge settles to ${settle} mL/L after 30 minutes and the MLSS is ${mlss} mg/L.\n\nWhat is the SVI?`,
+        answerText: `${fmt(svi,1)} mL/g`,
+        answerValue: svi,
+        answerUnit: "mL/g",
+        meta: { settle, mlss }
+      };
+    },
+    verify: (meta) => ({ answerValue: (meta.settle/meta.mlss)*1000, answerUnit:"mL/g" })
   },
 
   {
     family: "Flow Velocity",
+    is_experimental: false,
     generate: (opts) => {
-      const type = (opts.qtype && opts.qtype !== "mixed") ? opts.qtype : pick(["formula", "formula+unit"]);
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed") ? opts.difficulty : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = (opts.qtype==="conversion") ? "formula+unit" : chooseType(opts.qtype);
 
-      const flow =
-        +(rand() * (difficulty === "hard" ? 20 : difficulty === "normal" ? 10 : 5) + 0.5).toFixed(2); // cfs
-      const area =
-        +(rand() * (difficulty === "hard" ? 20 : difficulty === "normal" ? 10 : 4) + 0.5).toFixed(2); // ft²
-
-      const velocity = flow / area;
-
-      const question =
-        `A channel has a flow of ${flow} ft³/sec and a cross-sectional area of ${area} ft².\n\n` +
-        `What is the flow velocity in ft/sec?`;
-
-      const answer = `${fmt(velocity, 2)} ft/sec`;
-
-      return { type, difficulty, question, answer, meta: { flow, area } };
-    }
-  }
-  ,
-  // =========================
-  // Batch 3 – Clarifier Rates
-  // =========================
+      if (unitsMode === "us") {
+        const flow = +(rand()*(difficulty==="hard"?20:(difficulty==="normal"?10:5))+0.5).toFixed(2); // cfs
+        const area = +(rand()*(difficulty==="hard"?20:(difficulty==="normal"?10:4))+0.5).toFixed(2); // ft2
+        const v = flow/area;
+        return {
+          type, difficulty, unitsMode,
+          question: `A channel has a flow of ${flow} ft³/sec and an area of ${area} ft².\n\nWhat is the velocity (ft/sec)?`,
+          answerText: `${fmt(v,2)} ft/sec`,
+          answerValue: v,
+          answerUnit: "ft/sec",
+          meta: { flow, area }
+        };
+      } else {
+        const flow = +(rand()*(difficulty==="hard"?2.0:(difficulty==="normal"?1.2:0.7))+0.05).toFixed(3); // m3/s
+        const area = +(rand()*(difficulty==="hard"?2.5:(difficulty==="normal"?1.6:1.0))+0.05).toFixed(3); // m2
+        const v = flow/area;
+        return {
+          type, difficulty, unitsMode,
+          question: `A channel has a flow of ${flow} m³/s and an area of ${area} m².\n\nWhat is the velocity (m/s)?`,
+          answerText: `${fmt(v,3)} m/s`,
+          answerValue: v,
+          answerUnit: "m/s",
+          meta: { flow, area }
+        };
+      }
+    },
+    verify: (meta, unitsMode) => ({ answerValue: meta.flow/meta.area, answerUnit: (unitsMode==="us")?"ft/sec":"m/s" })
+  },
 
   {
     family: "Surface Overflow Rate (SOR)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const flowMGD =
-        +(rand() * (difficulty === "hard" ? 25 : difficulty === "normal" ? 12 : 6) + 0.5).toFixed(2);
-      const areaFt2 =
-        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
-
-      const gpd = flowMGD * 1_000_000;
-      const sor = gpd / areaFt2;
-
-      const question =
-        `A clarifier treats ${flowMGD} MGD and has a surface area of ${areaFt2} ft².\n\n` +
-        `What is the surface overflow rate (gpd/ft²)?`;
-
-      const answer = `${fmt(sor, 0)} gpd/ft²`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { flowMGD, areaFt2 }
-      };
+      if (unitsMode === "us") {
+        const flowMGD = +(rand()*(difficulty==="hard"?25:(difficulty==="normal"?12:6))+0.5).toFixed(2);
+        const areaFt2 = Math.round(rand()*(difficulty==="hard"?12000:(difficulty==="normal"?6000:3000))+500);
+        const sor = (flowMGD*C.GAL_PER_MG)/areaFt2; // gpd/ft2
+        return {
+          type, difficulty, unitsMode,
+          question: `A clarifier treats ${flowMGD} MGD and has a surface area of ${areaFt2} ft².\n\nWhat is SOR (gpd/ft²)?`,
+          answerText: `${fmt(sor,0)} gpd/ft²`,
+          answerValue: sor,
+          answerUnit: "gpd/ft²",
+          meta: { flowMGD, areaFt2 }
+        };
+      } else {
+        const flow_m3d = Math.round(rand()*(difficulty==="hard"?80000:(difficulty==="normal"?30000:15000))+2000);
+        const area_m2  = +(rand()*(difficulty==="hard"?1400:(difficulty==="normal"?700:350))+50).toFixed(1);
+        const sor = flow_m3d/area_m2; // m3/d/m2
+        return {
+          type, difficulty, unitsMode,
+          question: `A clarifier treats ${flow_m3d.toLocaleString()} m³/day and has a surface area of ${area_m2} m².\n\nWhat is SOR (m³/day/m²)?`,
+          answerText: `${fmt(sor,1)} m³/day/m²`,
+          answerValue: sor,
+          answerUnit: "m³/day/m²",
+          meta: { flow_m3d, area_m2 }
+        };
+      }
+    },
+    verify: (meta, unitsMode) => {
+      if (unitsMode==="us") return { answerValue: (meta.flowMGD*C.GAL_PER_MG)/meta.areaFt2, answerUnit:"gpd/ft²" };
+      return { answerValue: meta.flow_m3d/meta.area_m2, answerUnit:"m³/day/m²" };
     }
   },
 
   {
     family: "Weir Overflow Rate (WOR)",
+    is_experimental: true, // as requested: experimental category
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const flowMGD =
-        +(rand() * (difficulty === "hard" ? 25 : difficulty === "normal" ? 12 : 6) + 0.5).toFixed(2);
-      const weirFt =
-        Math.round(rand() * (difficulty === "hard" ? 1200 : difficulty === "normal" ? 700 : 350) + 100);
-
-      const gpd = flowMGD * 1_000_000;
-      const wor = gpd / weirFt;
-
-      const question =
-        `A clarifier receives ${flowMGD} MGD and has a total weir length of ${weirFt} ft.\n\n` +
-        `What is the weir overflow rate (gpd/ft)?`;
-
-      const answer = `${fmt(wor, 0)} gpd/ft`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { flowMGD, weirFt }
-      };
+      if (unitsMode === "us") {
+        const flowMGD = +(rand()*(difficulty==="hard"?25:(difficulty==="normal"?12:6))+0.5).toFixed(2);
+        const weirFt  = Math.round(rand()*(difficulty==="hard"?1200:(difficulty==="normal"?700:350))+100);
+        const wor = (flowMGD*C.GAL_PER_MG)/weirFt; // gpd/ft
+        return {
+          type, difficulty, unitsMode,
+          question: `A clarifier receives ${flowMGD} MGD and has a total weir length of ${weirFt} ft.\n\nWhat is WOR (gpd/ft)? (Experimental)`,
+          answerText: `${fmt(wor,0)} gpd/ft`,
+          answerValue: wor,
+          answerUnit: "gpd/ft",
+          meta: { flowMGD, weirFt }
+        };
+      } else {
+        const flow_m3d = Math.round(rand()*(difficulty==="hard"?80000:(difficulty==="normal"?30000:15000))+2000);
+        const weir_m   = +(rand()*(difficulty==="hard"?400:(difficulty==="normal"?250:120))+20).toFixed(1);
+        const wor = flow_m3d/weir_m; // m3/d/m
+        return {
+          type, difficulty, unitsMode,
+          question: `A clarifier receives ${flow_m3d.toLocaleString()} m³/day and has a total weir length of ${weir_m} m.\n\nWhat is WOR (m³/day/m)? (Experimental)`,
+          answerText: `${fmt(wor,1)} m³/day/m`,
+          answerValue: wor,
+          answerUnit: "m³/day/m",
+          meta: { flow_m3d, weir_m }
+        };
+      }
+    },
+    verify: (meta, unitsMode) => {
+      if (unitsMode==="us") return { answerValue: (meta.flowMGD*C.GAL_PER_MG)/meta.weirFt, answerUnit:"gpd/ft" };
+      return { answerValue: meta.flow_m3d/meta.weir_m, answerUnit:"m³/day/m" };
     }
   },
 
   {
     family: "Solids Loading Rate (SLR)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const solidsLbDay =
-        Math.round(rand() * (difficulty === "hard" ? 40000 : difficulty === "normal" ? 20000 : 8000) + 2000);
-      const areaFt2 =
-        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
-
-      const slr = solidsLbDay / areaFt2;
-
-      const question =
-        `A clarifier receives ${solidsLbDay} lb/day of solids and has a surface area of ${areaFt2} ft².\n\n` +
-        `What is the solids loading rate (lb/day/ft²)?`;
-
-      const answer = `${fmt(slr, 2)} lb/day/ft²`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { solidsLbDay, areaFt2 }
-      };
+      if (unitsMode==="us") {
+        const solids = Math.round(rand()*(difficulty==="hard"?40000:(difficulty==="normal"?20000:8000))+2000); // lb/d
+        const areaFt2 = Math.round(rand()*(difficulty==="hard"?12000:(difficulty==="normal"?6000:3000))+500);
+        const slr = solids/areaFt2;
+        return {
+          type, difficulty, unitsMode,
+          question: `A clarifier receives ${solids} lb/day of solids and has an area of ${areaFt2} ft².\n\nWhat is SLR (lb/day/ft²)?`,
+          answerText: `${fmt(slr,2)} lb/day/ft²`,
+          answerValue: slr,
+          answerUnit: "lb/day/ft²",
+          meta: { solids, areaFt2 }
+        };
+      } else {
+        const solids = Math.round(rand()*(difficulty==="hard"?18000:(difficulty==="normal"?9000:4000))+500); // kg/d
+        const area_m2 = +(rand()*(difficulty==="hard"?1400:(difficulty==="normal"?700:350))+50).toFixed(1);
+        const slr = solids/area_m2;
+        return {
+          type, difficulty, unitsMode,
+          question: `A clarifier receives ${solids} kg/day of solids and has an area of ${area_m2} m².\n\nWhat is SLR (kg/day/m²)?`,
+          answerText: `${fmt(slr,2)} kg/day/m²`,
+          answerValue: slr,
+          answerUnit: "kg/day/m²",
+          meta: { solids, area_m2 }
+        };
+      }
+    },
+    verify: (meta, unitsMode) => {
+      if (unitsMode==="us") return { answerValue: meta.solids/meta.areaFt2, answerUnit:"lb/day/ft²" };
+      return { answerValue: meta.solids/meta.area_m2, answerUnit:"kg/day/m²" };
     }
-  }
-  ,
-  // =========================
-  // Batch 4 – Pumps & Electrical
-  // =========================
+  },
 
   {
-    family: "Pump Power (HP)",
+    family: "Pump Power",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const flowGPM =
-        Math.round(rand() * (difficulty === "hard" ? 6000 : difficulty === "normal" ? 3000 : 1500) + 200);
-      const headFt =
-        Math.round(rand() * (difficulty === "hard" ? 180 : difficulty === "normal" ? 120 : 60) + 20);
-      const efficiency =
-        +(rand() * (difficulty === "hard" ? 0.25 : difficulty === "normal" ? 0.20 : 0.15) + 0.65).toFixed(2);
+      const eff = +(rand()*(difficulty==="hard"?0.25:(difficulty==="normal"?0.20:0.15))+0.65).toFixed(2);
 
-      // HP = (Q * H) / (3960 * eff)
-      const hp = (flowGPM * headFt) / (3960 * efficiency);
-
-      const question =
-        `A pump delivers ${flowGPM} gpm against a head of ${headFt} ft ` +
-        `with an efficiency of ${(efficiency * 100).toFixed(0)}%.\n\n` +
-        `What is the required pump horsepower?`;
-
-      const answer = `${fmt(hp, 2)} HP`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { flowGPM, headFt, efficiency }
-      };
+      if (unitsMode==="us") {
+        const gpm = Math.round(rand()*(difficulty==="hard"?6000:(difficulty==="normal"?3000:1500))+200);
+        const headFt = Math.round(rand()*(difficulty==="hard"?180:(difficulty==="normal"?120:60))+20);
+        const hp = (gpm*headFt)/(3960*eff);
+        return {
+          type, difficulty, unitsMode,
+          question: `A pump delivers ${gpm} gpm against ${headFt} ft of head at ${(eff*100).toFixed(0)}% efficiency.\n\nWhat is pump power (HP)?`,
+          answerText: `${fmt(hp,2)} HP`,
+          answerValue: hp,
+          answerUnit: "HP",
+          meta: { gpm, headFt, eff }
+        };
+      } else {
+        // kW hydraulic = (rho*g*Q*H)/(eff*1000) ; Q in m3/s, H in m
+        const q_m3s = +(rand()*(difficulty==="hard"?0.8:(difficulty==="normal"?0.4:0.25))+0.03).toFixed(3);
+        const head_m = +(rand()*(difficulty==="hard"?55:(difficulty==="normal"?35:20))+3).toFixed(1);
+        const rho = 1000; const g = 9.80665;
+        const kW = (rho*g*q_m3s*head_m)/(eff*1000);
+        return {
+          type, difficulty, unitsMode,
+          question: `A pump delivers ${q_m3s} m³/s against ${head_m} m of head at ${(eff*100).toFixed(0)}% efficiency.\n\nWhat is pump power (kW)?`,
+          answerText: `${fmt(kW,2)} kW`,
+          answerValue: kW,
+          answerUnit: "kW",
+          meta: { q_m3s, head_m, eff }
+        };
+      }
+    },
+    verify: (meta, unitsMode) => {
+      const eff = meta.eff;
+      if (unitsMode==="us") return { answerValue: (meta.gpm*meta.headFt)/(3960*eff), answerUnit:"HP" };
+      const rho=1000, g=9.80665;
+      return { answerValue: (rho*g*meta.q_m3s*meta.head_m)/(eff*1000), answerUnit:"kW" };
     }
   },
 
   {
     family: "Electrical Power (kW)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const volts =
-        Math.round(rand() * (difficulty === "hard" ? 460 : difficulty === "normal" ? 240 : 120) + 120);
-      const amps =
-        +(rand() * (difficulty === "hard" ? 150 : difficulty === "normal" ? 80 : 40) + 5).toFixed(1);
-      const phases = pick([1, 3]);
-      const pf =
-        +(rand() * (difficulty === "hard" ? 0.25 : difficulty === "normal" ? 0.20 : 0.15) + 0.75).toFixed(2);
+      const volts = Math.round(rand()*(difficulty==="hard"?460:(difficulty==="normal"?240:120))+120);
+      const amps  = +(rand()*(difficulty==="hard"?150:(difficulty==="normal"?80:40))+5).toFixed(1);
+      const phases = pick([1,3]);
+      const pf = +(rand()*(difficulty==="hard"?0.25:(difficulty==="normal"?0.20:0.15))+0.75).toFixed(2);
 
-      // kW = (V * I * √3 * PF) / 1000 for 3-phase, else (V * I * PF) / 1000
-      const kw = phases === 3
-        ? (volts * amps * 1.732 * pf) / 1000
-        : (volts * amps * pf) / 1000;
-
-      const phaseText = phases === 3 ? "three-phase" : "single-phase";
-
-      const question =
-        `A ${phaseText} motor operates at ${volts} volts and draws ${amps} amps ` +
-        `with a power factor of ${pf}.\n\n` +
-        `What is the electrical power in kW?`;
-
-      const answer = `${fmt(kw, 2)} kW`;
+      const kW = (phases===3) ? (volts*amps*1.732*pf)/1000 : (volts*amps*pf)/1000;
+      const phaseText = phases===3 ? "three-phase" : "single-phase";
 
       return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
+        type, difficulty, unitsMode,
+        question: `A ${phaseText} motor operates at ${volts} V and draws ${amps} A with PF ${pf}.\n\nWhat is power (kW)?`,
+        answerText: `${fmt(kW,2)} kW`,
+        answerValue: kW,
+        answerUnit: "kW",
         meta: { volts, amps, phases, pf }
       };
+    },
+    verify: (m) => {
+      const kW = (m.phases===3) ? (m.volts*m.amps*1.732*m.pf)/1000 : (m.volts*m.amps*m.pf)/1000;
+      return { answerValue: kW, answerUnit:"kW" };
     }
   },
 
   {
     family: "Energy Use (kWh/day)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const kw =
-        +(rand() * (difficulty === "hard" ? 250 : difficulty === "normal" ? 120 : 60) + 5).toFixed(1);
-      const hours =
-        Math.round(rand() * (difficulty === "hard" ? 24 : difficulty === "normal" ? 16 : 12) + 1);
-
-      const kwhDay = kw * hours;
-
-      const question =
-        `A piece of equipment operates at ${kw} kW for ${hours} hours per day.\n\n` +
-        `What is the daily energy use in kWh/day?`;
-
-      const answer = `${fmt(kwhDay, 1)} kWh/day`;
+      const kW = +(rand()*(difficulty==="hard"?250:(difficulty==="normal"?120:60))+5).toFixed(1);
+      const hours = Math.round(rand()*(difficulty==="hard"?24:(difficulty==="normal"?16:12))+1);
+      const kWh = kW*hours;
 
       return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { kw, hours }
+        type, difficulty, unitsMode,
+        question: `Equipment runs at ${kW} kW for ${hours} hours/day.\n\nWhat is energy use (kWh/day)?`,
+        answerText: `${fmt(kWh,1)} kWh/day`,
+        answerValue: kWh,
+        answerUnit: "kWh/day",
+        meta: { kW, hours }
       };
-    }
-  }
-  ,
-  // =========================
-  // Batch 5 – Lab & Chemistry
-  // =========================
+    },
+    verify: (m) => ({ answerValue: m.kW*m.hours, answerUnit:"kWh/day" })
+  },
 
   {
     family: "BOD (Unseeded)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode); // same mg/L
+      const type = "formula+unit";
 
-      const initialDO =
-        +(rand() * (difficulty === "hard" ? 8 : 6) + 2).toFixed(1);
-      const finalDO =
-        +(rand() * (difficulty === "hard" ? 2 : 1.5) + 0.2).toFixed(1);
-      const sampleML =
-        pick([10, 15, 20, 25, 50]);
+      const initialDO = +(rand()*(difficulty==="hard"?8:6)+2).toFixed(1);
+      const finalDO   = +(rand()*(difficulty==="hard"?2:1.5)+0.2).toFixed(1);
+      const sampleML  = pick([10,15,20,25,50]);
 
-      const bod = ((initialDO - finalDO) * 300) / sampleML;
-
-      const question =
-        `An unseeded BOD test has an initial DO of ${initialDO} mg/L ` +
-        `and a final DO of ${finalDO} mg/L using a ${sampleML} mL sample.\n\n` +
-        `What is the BOD in mg/L?`;
-
-      const answer = `${fmt(bod, 1)} mg/L`;
+      const bod = ((initialDO-finalDO)*300)/sampleML;
 
       return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
+        type, difficulty, unitsMode,
+        question: `Unseeded BOD: initial DO ${initialDO} mg/L, final DO ${finalDO} mg/L, sample ${sampleML} mL.\n\nWhat is BOD (mg/L)?`,
+        answerText: `${fmt(bod,1)} mg/L`,
+        answerValue: bod,
+        answerUnit: "mg/L",
         meta: { initialDO, finalDO, sampleML }
       };
-    }
+    },
+    verify: (m) => ({ answerValue: ((m.initialDO-m.finalDO)*300)/m.sampleML, answerUnit:"mg/L" })
   },
 
   {
     family: "BOD (Seeded)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const initialDO =
-        +(rand() * (difficulty === "hard" ? 8 : 6) + 2).toFixed(1);
-      const finalDO =
-        +(rand() * (difficulty === "hard" ? 2 : 1.5) + 0.2).toFixed(1);
-      const seedCorrection =
-        +(rand() * (difficulty === "hard" ? 1.5 : 1.0) + 0.1).toFixed(2);
-      const sampleML =
-        pick([10, 15, 20, 25, 50]);
+      const initialDO = +(rand()*(difficulty==="hard"?8:6)+2).toFixed(1);
+      const finalDO   = +(rand()*(difficulty==="hard"?2:1.5)+0.2).toFixed(1);
+      const seedCorr  = +(rand()*(difficulty==="hard"?1.5:1.0)+0.1).toFixed(2);
+      const sampleML  = pick([10,15,20,25,50]);
 
-      const bod = ((initialDO - finalDO - seedCorrection) * 300) / sampleML;
-
-      const question =
-        `A seeded BOD test has an initial DO of ${initialDO} mg/L, ` +
-        `a final DO of ${finalDO} mg/L, and a seed correction of ${seedCorrection} mg/L ` +
-        `using a ${sampleML} mL sample.\n\n` +
-        `What is the BOD in mg/L?`;
-
-      const answer = `${fmt(bod, 1)} mg/L`;
+      const bod = ((initialDO-finalDO-seedCorr)*300)/sampleML;
 
       return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { initialDO, finalDO, seedCorrection, sampleML }
+        type, difficulty, unitsMode,
+        question: `Seeded BOD: initial DO ${initialDO} mg/L, final DO ${finalDO} mg/L, seed correction ${seedCorr} mg/L, sample ${sampleML} mL.\n\nWhat is BOD (mg/L)?`,
+        answerText: `${fmt(bod,1)} mg/L`,
+        answerValue: bod,
+        answerUnit: "mg/L",
+        meta: { initialDO, finalDO, seedCorr, sampleML }
       };
-    }
+    },
+    verify: (m) => ({ answerValue: ((m.initialDO-m.finalDO-m.seedCorr)*300)/m.sampleML, answerUnit:"mg/L" })
   },
 
   {
     family: "Alkalinity (as CaCO₃)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const acidML =
-        +(rand() * (difficulty === "hard" ? 25 : 15) + 5).toFixed(1);
-      const normality =
-        pick([0.02, 0.05, 0.1]);
-      const sampleML =
-        pick([50, 100, 200]);
+      const acidML = +(rand()*(difficulty==="hard"?25:15)+5).toFixed(1);
+      const N = pick([0.02,0.05,0.1]);
+      const sampleML = pick([50,100,200]);
 
-      // mg/L as CaCO3 = (mL acid * N * 50,000) / mL sample
-      const alk = (acidML * normality * 50000) / sampleML;
-
-      const question =
-        `A ${sampleML} mL sample requires ${acidML} mL of ${normality} N acid.\n\n` +
-        `What is the alkalinity as CaCO₃ (mg/L)?`;
-
-      const answer = `${fmt(alk, 0)} mg/L as CaCO₃`;
+      const alk = (acidML*N*50000)/sampleML;
 
       return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { acidML, normality, sampleML }
+        type, difficulty, unitsMode,
+        question: `A ${sampleML} mL sample requires ${acidML} mL of ${N} N acid.\n\nWhat is alkalinity as CaCO₃ (mg/L)?`,
+        answerText: `${fmt(alk,0)} mg/L as CaCO₃`,
+        answerValue: alk,
+        answerUnit: "mg/L as CaCO₃",
+        meta: { acidML, N, sampleML }
       };
-    }
+    },
+    verify: (m) => ({ answerValue: (m.acidML*m.N*50000)/m.sampleML, answerUnit:"mg/L as CaCO₃" })
   },
 
   {
     family: "Dissolved Oxygen Deficit",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const saturationDO =
-        +(rand() * (difficulty === "hard" ? 10 : 8) + 6).toFixed(1);
-      const actualDO =
-        +(rand() * (difficulty === "hard" ? 4 : 3) + 0.5).toFixed(1);
-
-      const deficit = saturationDO - actualDO;
-
-      const question =
-        `The DO saturation is ${saturationDO} mg/L and the measured DO is ${actualDO} mg/L.\n\n` +
-        `What is the dissolved oxygen deficit?`;
-
-      const answer = `${fmt(deficit, 1)} mg/L`;
+      const sat = +(rand()*(difficulty==="hard"?10:8)+6).toFixed(1);
+      const actual = +(rand()*(difficulty==="hard"?4:3)+0.5).toFixed(1);
+      const deficit = sat-actual;
 
       return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { saturationDO, actualDO }
+        type, difficulty, unitsMode,
+        question: `DO saturation is ${sat} mg/L and measured DO is ${actual} mg/L.\n\nWhat is DO deficit (mg/L)?`,
+        answerText: `${fmt(deficit,1)} mg/L`,
+        answerValue: deficit,
+        answerUnit: "mg/L",
+        meta: { sat, actual }
       };
-    }
-  }
-  ,
-  // =========================
-  // Batch 6 – Filters & Backwash
-  // =========================
+    },
+    verify: (m) => ({ answerValue: m.sat-m.actual, answerUnit:"mg/L" })
+  },
 
   {
     family: "Filter Backwash Rate",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const areaFt2 =
-        Math.round(rand() * (difficulty === "hard" ? 1200 : difficulty === "normal" ? 600 : 300) + 50);
-      const flowGPM =
-        Math.round(rand() * (difficulty === "hard" ? 2500 : difficulty === "normal" ? 1500 : 800) + 200);
-
-      const rate = flowGPM / areaFt2;
-
-      const units = pick(["gpm/ft²", "L/m²·min"]);
-      const answerValue = units === "gpm/ft²"
-        ? rate
-        : rate * 40.74; // gpm/ft² → L/m²·min
-
-      const question =
-        `A filter has an area of ${areaFt2} ft² and is backwashed at ${flowGPM} gpm.\n\n` +
-        `What is the backwash rate in ${units}?`;
-
-      const answer = `${fmt(answerValue, 2)} ${units}`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { areaFt2, flowGPM }
-      };
+      // Build consistent physical scenario, then express in US or metric
+      if (unitsMode==="us") {
+        const areaFt2 = Math.round(rand()*(difficulty==="hard"?1200:(difficulty==="normal"?600:300))+50);
+        const flowGPM = Math.round(rand()*(difficulty==="hard"?2500:(difficulty==="normal"?1500:800))+200);
+        const rate = flowGPM/areaFt2;
+        return {
+          type, difficulty, unitsMode,
+          question: `Filter area ${areaFt2} ft², backwash flow ${flowGPM} gpm.\n\nWhat is backwash rate (gpm/ft²)?`,
+          answerText: `${fmt(rate,2)} gpm/ft²`,
+          answerValue: rate,
+          answerUnit: "gpm/ft²",
+          meta: { areaFt2, flowGPM }
+        };
+      } else {
+        const area_m2 = +(rand()*(difficulty==="hard"?110:(difficulty==="normal"?60:30))+5).toFixed(1);
+        const flow_Ls = +(rand()*(difficulty==="hard"?500:(difficulty==="normal"?250:120))+20).toFixed(1);
+        const rate = (flow_Ls*60)/area_m2; // L/min/m2
+        return {
+          type, difficulty, unitsMode,
+          question: `Filter area ${area_m2} m², backwash flow ${flow_Ls} L/s.\n\nWhat is backwash rate (L/m²·min)?`,
+          answerText: `${fmt(rate,2)} L/m²·min`,
+          answerValue: rate,
+          answerUnit: "L/m²·min",
+          meta: { area_m2, flow_Ls }
+        };
+      }
+    },
+    verify: (m, u) => {
+      if (u==="us") return { answerValue: m.flowGPM/m.areaFt2, answerUnit:"gpm/ft²" };
+      return { answerValue: (m.flow_Ls*60)/m.area_m2, answerUnit:"L/m²·min" };
     }
   },
 
   {
     family: "Filter Backwash Rise Rate",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const expansionIn =
-        +(rand() * (difficulty === "hard" ? 18 : difficulty === "normal" ? 12 : 8) + 2).toFixed(1);
-      const timeMin =
-        Math.round(rand() * (difficulty === "hard" ? 15 : difficulty === "normal" ? 10 : 6) + 2);
-
-      const rateInMin = expansionIn / timeMin;
-
-      const units = pick(["in/min", "cm/min"]);
-      const answerValue = units === "in/min"
-        ? rateInMin
-        : rateInMin * 2.54;
-
-      const question =
-        `A filter bed expands ${expansionIn} inches in ${timeMin} minutes during backwash.\n\n` +
-        `What is the rise rate in ${units}?`;
-
-      const answer = `${fmt(answerValue, 2)} ${units}`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { expansionIn, timeMin }
-      };
+      if (unitsMode==="us") {
+        const expansionIn = +(rand()*(difficulty==="hard"?18:(difficulty==="normal"?12:8))+2).toFixed(1);
+        const timeMin = Math.round(rand()*(difficulty==="hard"?15:(difficulty==="normal"?10:6))+2);
+        const rate = expansionIn/timeMin;
+        return {
+          type, difficulty, unitsMode,
+          question: `A filter bed expands ${expansionIn} inches in ${timeMin} minutes.\n\nWhat is rise rate (in/min)?`,
+          answerText: `${fmt(rate,2)} in/min`,
+          answerValue: rate,
+          answerUnit: "in/min",
+          meta: { expansionIn, timeMin }
+        };
+      } else {
+        const expansionCm = +(rand()*(difficulty==="hard"?45:(difficulty==="normal"?30:20))+5).toFixed(1);
+        const timeMin = Math.round(rand()*(difficulty==="hard"?15:(difficulty==="normal"?10:6))+2);
+        const rate = expansionCm/timeMin;
+        return {
+          type, difficulty, unitsMode,
+          question: `A filter bed expands ${expansionCm} cm in ${timeMin} minutes.\n\nWhat is rise rate (cm/min)?`,
+          answerText: `${fmt(rate,2)} cm/min`,
+          answerValue: rate,
+          answerUnit: "cm/min",
+          meta: { expansionCm, timeMin }
+        };
+      }
+    },
+    verify: (m,u) => {
+      if (u==="us") return { answerValue: m.expansionIn/m.timeMin, answerUnit:"in/min" };
+      return { answerValue: m.expansionCm/m.timeMin, answerUnit:"cm/min" };
     }
   },
 
   {
     family: "Filter Yield",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const massLb =
-        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
-      const areaFt2 =
-        Math.round(rand() * (difficulty === "hard" ? 1000 : difficulty === "normal" ? 500 : 250) + 50);
-      const hours =
-        Math.round(rand() * (difficulty === "hard" ? 12 : difficulty === "normal" ? 8 : 6) + 1);
-
-      const rateLb = massLb / (areaFt2 * hours);
-
-      const units = pick(["lb/hr/ft²", "kg/hr/m²"]);
-      const answerValue = units === "lb/hr/ft²"
-        ? rateLb
-        : rateLb * 4.882; // lb/ft²·hr → kg/m²·hr
-
-      const question =
-        `A filter produces ${massLb} lb of solids over ${hours} hours ` +
-        `with an area of ${areaFt2} ft².\n\n` +
-        `What is the filter yield in ${units}?`;
-
-      const answer = `${fmt(answerValue, 3)} ${units}`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { massLb, areaFt2, hours }
-      };
+      if (unitsMode==="us") {
+        const massLb = Math.round(rand()*(difficulty==="hard"?12000:(difficulty==="normal"?6000:3000))+500);
+        const areaFt2 = Math.round(rand()*(difficulty==="hard"?1000:(difficulty==="normal"?500:250))+50);
+        const hours = Math.round(rand()*(difficulty==="hard"?12:(difficulty==="normal"?8:6))+1);
+        const yieldv = massLb/(areaFt2*hours);
+        return {
+          type, difficulty, unitsMode,
+          question: `A filter produces ${massLb} lb over ${hours} hours with area ${areaFt2} ft².\n\nWhat is yield (lb/hr/ft²)?`,
+          answerText: `${fmt(yieldv,3)} lb/hr/ft²`,
+          answerValue: yieldv,
+          answerUnit: "lb/hr/ft²",
+          meta: { massLb, areaFt2, hours }
+        };
+      } else {
+        const massKg = Math.round(rand()*(difficulty==="hard"?6000:(difficulty==="normal"?3000:1500))+200);
+        const area_m2 = +(rand()*(difficulty==="hard"?110:(difficulty==="normal"?60:30))+5).toFixed(1);
+        const hours = Math.round(rand()*(difficulty==="hard"?12:(difficulty==="normal"?8:6))+1);
+        const yieldv = massKg/(area_m2*hours);
+        return {
+          type, difficulty, unitsMode,
+          question: `A filter produces ${massKg} kg over ${hours} hours with area ${area_m2} m².\n\nWhat is yield (kg/hr/m²)?`,
+          answerText: `${fmt(yieldv,3)} kg/hr/m²`,
+          answerValue: yieldv,
+          answerUnit: "kg/hr/m²",
+          meta: { massKg, area_m2, hours }
+        };
+      }
+    },
+    verify: (m,u) => {
+      if (u==="us") return { answerValue: m.massLb/(m.areaFt2*m.hours), answerUnit:"lb/hr/ft²" };
+      return { answerValue: m.massKg/(m.area_m2*m.hours), answerUnit:"kg/hr/m²" };
     }
   },
 
   {
     family: "Hydraulic Loading (Areal)",
+    is_experimental: false,
     generate: (opts) => {
-      const difficulty = (opts.difficulty && opts.difficulty !== "mixed")
-        ? opts.difficulty
-        : pick(["easy", "normal", "hard"]);
+      const difficulty = chooseDifficulty(opts.difficulty);
+      const unitsMode = chooseUnits(opts.unitsMode);
+      const type = "formula+unit";
 
-      const flowMGD =
-        +(rand() * (difficulty === "hard" ? 25 : difficulty === "normal" ? 12 : 6) + 0.5).toFixed(2);
-      const areaFt2 =
-        Math.round(rand() * (difficulty === "hard" ? 12000 : difficulty === "normal" ? 6000 : 3000) + 500);
-
-      const gpd = flowMGD * 1_000_000;
-      const loading = gpd / areaFt2;
-
-      const units = pick(["gpd/ft²", "gpd/m²"]);
-      const answerValue = units === "gpd/ft²"
-        ? loading
-        : loading * 10.764;
-
-      const question =
-        `A process treats ${flowMGD} MGD with a surface area of ${areaFt2} ft².\n\n` +
-        `What is the hydraulic loading rate in ${units}?`;
-
-      const answer = `${fmt(answerValue, 0)} ${units}`;
-
-      return {
-        type: "formula+unit",
-        difficulty,
-        question,
-        answer,
-        meta: { flowMGD, areaFt2 }
-      };
+      if (unitsMode==="us") {
+        const flowMGD = +(rand()*(difficulty==="hard"?25:(difficulty==="normal"?12:6))+0.5).toFixed(2);
+        const areaFt2 = Math.round(rand()*(difficulty==="hard"?12000:(difficulty==="normal"?6000:3000))+500);
+        const loading = (flowMGD*C.GAL_PER_MG)/areaFt2; // gpd/ft2
+        return {
+          type, difficulty, unitsMode,
+          question: `A unit treats ${flowMGD} MGD with area ${areaFt2} ft².\n\nWhat is hydraulic loading (gpd/ft²)?`,
+          answerText: `${fmt(loading,0)} gpd/ft²`,
+          answerValue: loading,
+          answerUnit: "gpd/ft²",
+          meta: { flowMGD, areaFt2 }
+        };
+      } else {
+        const flow_m3d = Math.round(rand()*(difficulty==="hard"?80000:(difficulty==="normal"?30000:15000))+2000);
+        const area_m2  = +(rand()*(difficulty==="hard"?1400:(difficulty==="normal"?700:350))+50).toFixed(1);
+        const loading = flow_m3d/area_m2; // m3/d/m2
+        return {
+          type, difficulty, unitsMode,
+          question: `A unit treats ${flow_m3d.toLocaleString()} m³/day with area ${area_m2} m².\n\nWhat is hydraulic loading (m³/day/m²)?`,
+          answerText: `${fmt(loading,1)} m³/day/m²`,
+          answerValue: loading,
+          answerUnit: "m³/day/m²",
+          meta: { flow_m3d, area_m2 }
+        };
+      }
+    },
+    verify: (m,u) => {
+      if (u==="us") return { answerValue: (m.flowMGD*C.GAL_PER_MG)/m.areaFt2, answerUnit:"gpd/ft²" };
+      return { answerValue: m.flow_m3d/m.area_m2, answerUnit:"m³/day/m²" };
     }
   }
-  ,
-  // =========================
-  // Batch 7 – Experimental / Edge
-  // =========================
-
-  {
-    family: "Weir Flow (Experimental)",
-    generate: () => {
-      const lengthFt = +(rand() * 20 + 2).toFixed(1);
-      const headFt = +(rand() * 1.2 + 0.2).toFixed(2);
-
-      // Q = 3.33 * L * H^(3/2)
-      const flowCFS = 3.33 * lengthFt * Math.pow(headFt, 1.5);
-
-      const question =
-        `A rectangular weir has a crest length of ${lengthFt} ft ` +
-        `and a head of ${headFt} ft.\n\n` +
-        `Estimate the flow rate in ft³/sec. (Experimental)`;
-
-      const answer = `${fmt(flowCFS, 2)} ft³/sec`;
-
-      return {
-        type: "formula+unit",
-        difficulty: "hard",
-        question,
-        answer,
-        meta: { lengthFt, headFt, experimental: true }
-      };
-    }
-  },
-
-  {
-    family: "Multi-Step Conversion",
-    generate: () => {
-      const flowMGD = +(rand() * 8 + 1).toFixed(2);
-
-      // MGD → gpd → gpm
-      const gpd = flowMGD * 1_000_000;
-      const gpm = gpd / 1440;
-
-      const question =
-        `A plant treats ${flowMGD} MGD.\n\n` +
-        `Convert this flow to gallons per minute (gpm).`;
-
-      const answer = `${fmt(gpm, 1)} gpm`;
-
-      return {
-        type: "conversion",
-        difficulty: "normal",
-        question,
-        answer,
-        meta: { flowMGD }
-      };
-    }
-  },
-
-  {
-    family: "Generic Detention Time (Any Volume)",
-    generate: () => {
-      const volumeGal =
-        Math.round(rand() * 8_000_000 + 500_000);
-      const flowGPM =
-        Math.round(rand() * 6000 + 300);
-
-      const volumeGalPerMin = flowGPM;
-      const minutes = volumeGal / volumeGalPerMin;
-      const hours = minutes / 60;
-
-      const question =
-        `A process unit has a volume of ${volumeGal.toLocaleString()} gallons ` +
-        `and a flow of ${flowGPM} gpm.\n\n` +
-        `What is the detention time in hours?`;
-
-      const answer = `${fmt(hours, 2)} hours`;
-
-      return {
-        type: "formula+unit",
-        difficulty: "normal",
-        question,
-        answer,
-        meta: { volumeGal, flowGPM }
-      };
-    }
-  },
-
-  {
-    family: "Extra Information Stress Question",
-    generate: () => {
-      const flowMGD = +(rand() * 6 + 1).toFixed(2);
-      const areaFt2 = Math.round(rand() * 4000 + 800);
-      const tempF = Math.round(rand() * 40 + 45); // irrelevant
-      const ph = +(rand() * 1.5 + 6.5).toFixed(1); // irrelevant
-
-      const gpd = flowMGD * 1_000_000;
-      const loading = gpd / areaFt2;
-
-      const question =
-        `A clarifier treats ${flowMGD} MGD and has an area of ${areaFt2} ft².\n` +
-        `The wastewater temperature is ${tempF}°F and the pH is ${ph}.\n\n` +
-        `What is the surface loading rate (gpd/ft²)?`;
-
-      const answer = `${fmt(loading, 0)} gpd/ft²`;
-
-      return {
-        type: "formula+unit",
-        difficulty: "hard",
-        question,
-        answer,
-        meta: { flowMGD, areaFt2, tempF, ph }
-      };
-    }
-  }
-
 ];
 
-    // =========================
-    // Generator engine
-    // =========================
-    let BANK = null;
+// =========================
+// Generator engine (global 50/50 across bank)
+// =========================
+let BANK = null;
+let AUDIT = null;
 
-    async function generateBank() {
-      const perFamily = Number(document.getElementById("perFamily").value || 500);
-      const difficulty = document.getElementById("difficulty").value;
-      const qtype = document.getElementById("qtype").value;
-      const unitsMode = "mixed"; // TEMP: we’ll wire the dropdown later
-      const unitsMode = document.getElementById("unitsMode").value;
-      
-      const status = document.getElementById("status");
-      const familiesEl = document.getElementById("families");
-      const targetEl = document.getElementById("target");
-      const acceptedEl = document.getElementById("accepted");
-      const rejectedEl = document.getElementById("rejected");
-      const elapsedEl = document.getElementById("elapsed");
-      const previewEl = document.getElementById("preview");
-      const btnDownload = document.getElementById("btnDownload");
+async function generateBank() {
+  const perFamily = Number(document.getElementById("perFamily").value || 200);
+  const difficulty = document.getElementById("difficulty").value;
+  const qtype = document.getElementById("qtype").value;
+  const unitsMode = document.getElementById("unitsMode").value;
+  const includeExperimental = document.getElementById("includeExperimental").checked;
+  const runAudit = document.getElementById("runAudit").checked;
 
-      BANK = null;
-      btnDownload.disabled = true;
+  const status = document.getElementById("status");
+  const familiesEl = document.getElementById("families");
+  const targetEl = document.getElementById("target");
+  const acceptedEl = document.getElementById("accepted");
+  const rejectedEl = document.getElementById("rejected");
+  const usEl = document.getElementById("usCount");
+  const metricEl = document.getElementById("metricCount");
+  const elapsedEl = document.getElementById("elapsed");
+  const previewEl = document.getElementById("preview");
 
-      const start = performance.now();
-      status.textContent = "Generating...";
-      status.className = "ok";
+  BANK = null;
+  AUDIT = null;
+  document.getElementById("btnDownload").disabled = true;
+  document.getElementById("btnDownloadAudit").disabled = true;
 
-      const families = FORMULAS.map(f => f.family);
-      familiesEl.textContent = String(families.length);
-      targetEl.textContent = String(families.length * perFamily);
+  const start = performance.now();
+  status.textContent = "Generating...";
+  status.className = "ok";
 
-      const out = {
-        generated_at: new Date().toISOString(),
-        settings: { perFamily, difficulty, qtype, unitsMode },
-        families,
-        questions: []
-      };
+  const activeFamilies = FORMULAS.filter(f => includeExperimental ? true : !f.is_experimental);
+  familiesEl.textContent = String(activeFamilies.length);
 
-      let accepted = 0;
-      let rejected = 0;
+  const totalTarget = activeFamilies.length * perFamily;
+  targetEl.textContent = String(totalTarget);
 
-      // Cap attempts so we never infinite loop if a family is too strict.
-      const MAX_ATTEMPTS_PER_FAMILY = perFamily * 50;
+  const wantUS = (unitsMode === "mixed50") ? Math.floor(totalTarget/2) : (unitsMode==="us" ? totalTarget : 0);
+  const wantMetric = (unitsMode === "mixed50") ? (totalTarget - wantUS) : (unitsMode==="metric" ? totalTarget : 0);
 
-for (const fam of FORMULAS) {
-  let got = 0;
-  let attempts = 0;
+  const out = {
+    generated_at: new Date().toISOString(),
+    settings: { perFamily, difficulty, qtype, unitsMode, includeExperimental, runAudit, tolerance: "±0.5% (numeric)" },
+    families: activeFamilies.map(f => ({ family: f.family, experimental: !!f.is_experimental })),
+    questions: []
+  };
 
-  // exact split per family when mixed50
-  const targetUS = (unitsMode === "mixed50") ? Math.floor(perFamily / 2) : perFamily;
-  const targetMetric = (unitsMode === "mixed50") ? (perFamily - targetUS) : perFamily;
+  const audit = {
+    generated_at: out.generated_at,
+    settings: out.settings,
+    totals: { target: totalTarget, accepted: 0, rejected: 0, us: 0, metric: 0 },
+    per_family: {},
+    qc_fail_examples: [] // limited samples
+  };
 
+  let accepted = 0;
+  let rejected = 0;
   let gotUS = 0;
   let gotMetric = 0;
 
-  while (got < perFamily && attempts < MAX_ATTEMPTS_PER_FAMILY) {
-    attempts++;
+  // Attempts cap to prevent runaway loops
+  const MAX_TOTAL_ATTEMPTS = totalTarget * 80;
 
-    // Decide which unit system we still need MORE of
-    let forcedUnitsMode = unitsMode;
-    if (unitsMode === "mixed50") {
-      forcedUnitsMode = (gotUS < targetUS) ? "us" : "metric";
+  // We'll cycle families to distribute opportunities fairly
+  let famIndex = 0;
+  let attempts = 0;
+
+  while (accepted < totalTarget && attempts < MAX_TOTAL_ATTEMPTS) {
+    attempts++;
+    const fam = activeFamilies[famIndex % activeFamilies.length];
+    famIndex++;
+
+    // Decide the forced units for global 50/50
+    let forcedUnits;
+    if (unitsMode === "us") forcedUnits = "us";
+    else if (unitsMode === "metric") forcedUnits = "metric";
+    else {
+      forcedUnits = (gotUS < wantUS) ? "us" : "metric";
     }
 
-    const q = fam.generate({ difficulty, qtype, unitsMode });
+    const q = fam.generate({ difficulty, qtype, unitsMode: forcedUnits });
 
-    // existing filters
+    // family may return a different type if conversion not supported; enforce qtype filter
     if (qtype !== "mixed" && q.type !== qtype) { rejected++; continue; }
     if (difficulty !== "mixed" && q.difficulty !== difficulty) { rejected++; continue; }
-    if (!q.question || !q.answer) { rejected++; continue; }
 
-  out.questions.push({
-    id: uid(fam.family.replace(/\s+/g, "_")),
-    family: fam.family,
-    type: q.type,
-    difficulty: q.difficulty,
-    units_mode: (q.meta && q.meta.unitsMode) ? q.meta.unitsMode : unitsMode,
-    question: q.question,
-    answer: q.answer,
-    meta: q.meta || {}
-  });
+    // QC sanity
+    if (!q.question || !q.answerText || !Number.isFinite(q.answerValue)) { rejected++; continue; }
 
-
-    got++;
-    accepted++;
-
-    if (unitsMode === "mixed50") {
-      if (forcedUnitsMode === "us") gotUS++;
-      else gotMetric++;
+    // QC verify (recompute) if enabled
+    if (runAudit && typeof fam.verify === "function") {
+      const v = fam.verify(q.meta, q.unitsMode);
+      const okUnit = (v.answerUnit === q.answerUnit);
+      const okVal = (relDiff(v.answerValue, q.answerValue) <= 0.005) || (Math.abs(v.answerValue - q.answerValue) <= 1e-9);
+      if (!okUnit || !okVal) {
+        rejected++;
+        if (audit.qc_fail_examples.length < 10) {
+          audit.qc_fail_examples.push({
+            family: fam.family,
+            unitsMode: q.unitsMode,
+            expected: { value: v.answerValue, unit: v.answerUnit },
+            got: { value: q.answerValue, unit: q.answerUnit },
+            question: q.question
+          });
+        }
+        continue;
+      }
     }
 
-    // (your existing UI update / await breathing stays the same)
+    const id = uid(fam.family.replace(/\s+/g, "_"));
+
+    out.questions.push({
+      id,
+      family: fam.family,
+      experimental: !!fam.is_experimental,
+      type: q.type,
+      difficulty: q.difficulty,
+      units_mode: q.unitsMode,
+      question: q.question,
+      answer: q.answerText,
+      answer_value: q.answerValue,
+      answer_unit: q.answerUnit,
+      meta: q.meta || {}
+    });
+
+    accepted++;
+
+    if (q.unitsMode === "us") gotUS++;
+    else gotMetric++;
+
+    // audit counters
+    if (!audit.per_family[fam.family]) {
+      audit.per_family[fam.family] = { accepted: 0, rejected: 0, us: 0, metric: 0, experimental: !!fam.is_experimental };
+    }
+    audit.per_family[fam.family].accepted++;
+    if (q.unitsMode === "us") audit.per_family[fam.family].us++;
+    else audit.per_family[fam.family].metric++;
+
+    // UI updates
+    if (accepted % 100 === 0 || accepted === totalTarget) {
+      acceptedEl.textContent = String(accepted);
+      rejectedEl.textContent = String(rejected);
+      usEl.textContent = String(gotUS);
+      metricEl.textContent = String(gotMetric);
+      elapsedEl.textContent = ((performance.now() - start)/1000).toFixed(1);
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  // Compute per-family rejects approx (we only tracked accepts precisely; rejects global)
+  // For now store global rejects and leave per-family rejects as 0 unless QC fails captured.
+  audit.totals.accepted = accepted;
+  audit.totals.rejected = rejected;
+  audit.totals.us = gotUS;
+  audit.totals.metric = gotMetric;
+
+  acceptedEl.textContent = String(accepted);
+  rejectedEl.textContent = String(rejected);
+  usEl.textContent = String(gotUS);
+  metricEl.textContent = String(gotMetric);
+  elapsedEl.textContent = ((performance.now() - start)/1000).toFixed(1);
+
+  BANK = out;
+  AUDIT = audit;
+
+  document.getElementById("btnDownload").disabled = false;
+  document.getElementById("btnDownloadAudit").disabled = !runAudit;
+
+  previewEl.textContent = JSON.stringify(out.questions.slice(0, 20), null, 2);
+
+  if (accepted < totalTarget) {
+    status.textContent = "Stopped early (attempt cap reached)";
+    status.className = "bad";
+  } else {
+    status.textContent = "Done";
+    status.className = "ok";
   }
 }
 
+// =========================
+// Wire UI
+// =========================
+document.getElementById("btnGenerate").addEventListener("click", () => {
+  generateBank().catch(e => {
+    console.error(e);
+    const status = document.getElementById("status");
+    status.textContent = "ERROR: " + (e?.message || e);
+    status.className = "bad";
+  });
+});
 
+document.getElementById("btnDownload").addEventListener("click", () => {
+  if (!BANK) return;
+  downloadJSON("questions.json", BANK);
+});
 
-            await new Promise(r => setTimeout(r, 0)); // allow UI to breathe
-          }
-        }
+document.getElementById("btnDownloadAudit").addEventListener("click", () => {
+  if (!AUDIT) return;
+  downloadJSON("audit.json", AUDIT);
+});
+</script>
 
-        acceptedEl.textContent = String(accepted);
-        rejectedEl.textContent = String(rejected);
-        elapsedEl.textContent = ((performance.now() - start)/1000).toFixed(1);
-      }
-
-      BANK = out;
-      btnDownload.disabled = false;
-
-      previewEl.textContent = JSON.stringify(out.questions.slice(0, 20), null, 2);
-      status.textContent = "Done";
-      status.className = "ok";
-    }
-
-    // =========================
-    // Wire UI
-    // =========================
-    document.getElementById("btnGenerate").addEventListener("click", () => {
-      generateBank().catch(e => {
-        console.error(e);
-        const status = document.getElementById("status");
-        status.textContent = "ERROR: " + (e?.message || e);
-        status.className = "bad";
-      });
-    });
-
-    document.getElementById("btnDownload").addEventListener("click", () => {
-      if (!BANK) return;
-      downloadJSON("questions.json", BANK);
-    });
-  </script>
 </body>
 </html>
-
