@@ -1174,7 +1174,16 @@ function formatListNatural(arr){
   return lower.slice(0, -1).join(", ") + ", and " + lower[lower.length - 1];
 }
 
+function formatListNatural(arr){
+  if(!arr || arr.length === 0) return "";
+  if(arr.length === 1) return arr[0].toLowerCase();
+  if(arr.length === 2) return arr[0].toLowerCase() + " and " + arr[1].toLowerCase();
+  const lower = arr.map(x => x.toLowerCase());
+  return lower.slice(0, -1).join(", ") + ", and " + lower[lower.length - 1];
+}
+
 function generateOneGeneric(){
+
   if(!MICRO_TRUTH){
     alert("Truth file not loaded yet.");
     return;
@@ -1199,14 +1208,14 @@ function generateOneGeneric(){
 
   if(qType === "cause"){
     const states = cond.symptoms.slice(0,3);
-    question = `A plant is experiencing ${formatListNatural(states)}. What is the most likely cause?`;
+    question = `An operator observes ${formatListNatural(states)}. What is the most likely cause?`;
     correct = condKey.replace(/_/g," ");
-    rationale = `These symptoms are commonly associated with ${condKey.replace(/_/g," ")}.`;
+    rationale = `These symptoms are associated with ${condKey.replace(/_/g," ")}.`;
   }
 
   if(qType === "action"){
     const states = cond.symptoms.slice(0,3);
-    question = `A plant is experiencing ${formatListNatural(states)}. What is the best first action?`;
+    question = `An operator observes ${formatListNatural(states)}. What is the best first action?`;
     correct = cond.best_first_actions[
       Math.floor(Math.random()*cond.best_first_actions.length)
     ];
@@ -1235,18 +1244,17 @@ function generateOneGeneric(){
 
   if(qType === "action"){
     const actions = Object.keys(MICRO_TRUTH.process_adjustments);
-    const distractor1 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
-    const distractor2 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
-    const distractor3 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
+    const d1 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
+    const d2 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
+    const d3 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
 
-    choices = [correct, distractor1, distractor2, distractor3];
-    choices = shuffle(choices);
-    correctIndex = choices.indexOf(correct);
+    choices = [correct, d1, d2, d3];
   } else {
     choices = [correct, close1, close2, wrong];
-    choices = shuffle(choices);
-    correctIndex = choices.indexOf(correct);
   }
+
+  choices = shuffle(choices);
+  correctIndex = choices.indexOf(correct);
 
   showGenericQuestion({
     family: "Microbiology",
@@ -1256,6 +1264,7 @@ function generateOneGeneric(){
     correctIndex,
     rationale
   });
+
 }
 
 
@@ -1343,6 +1352,7 @@ function generateOneGeneric(){
     correctIndex,
     rationale
   });
+  
 }
 
 function showGenericQuestion(q){
