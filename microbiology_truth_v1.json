@@ -1,0 +1,1067 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-02-21T19:47:44.938534Z",
+  "notes": [
+    "Operational microbiology truth database for WW Class 2/3 generic question generator.",
+    "Filaments grouped by condition (not species).",
+    "Designed to support question types: direct knowledge, most likely cause, best first action, risk identification.",
+    "Close distractors should be drawn from common_confusions/confused_with; one distractor should be unrelated."
+  ],
+  "conditions": {
+    "low_DO": {
+      "symptoms": [
+        "High SVI",
+        "Poor settling",
+        "Cloudy effluent",
+        "Filamentous bulking",
+        "Possible rising sludge if nitrate present"
+      ],
+      "biological_effects": [
+        "Inhibits nitrification",
+        "Selects for low-DO filaments",
+        "Reduces floc strength"
+      ],
+      "process_impacts": [
+        "Higher effluent ammonia risk",
+        "Clarifier solids carryover risk",
+        "Reduced treatment stability"
+      ],
+      "best_first_actions": [
+        "Increase aeration/airflow",
+        "Check blower output and diffuser condition",
+        "Confirm DO probe calibration"
+      ],
+      "secondary_actions": [
+        "Improve mixing to eliminate dead zones",
+        "Review organic loading changes"
+      ],
+      "common_confusions": [
+        "high_FM",
+        "toxic_shock",
+        "nutrient_deficiency"
+      ]
+    },
+    "borderline_DO": {
+      "symptoms": [
+        "Intermittent nitrification",
+        "Fluctuating effluent ammonia",
+        "Occasional filament presence"
+      ],
+      "biological_effects": [
+        "Stresses nitrifiers",
+        "Allows filaments to compete at times"
+      ],
+      "process_impacts": [
+        "Unstable effluent quality",
+        "Higher risk during peak load"
+      ],
+      "best_first_actions": [
+        "Raise DO setpoint slightly",
+        "Stabilize airflow control",
+        "Verify aeration distribution"
+      ],
+      "secondary_actions": [
+        "Reduce peak load impacts (equalization/step feed if available)"
+      ],
+      "common_confusions": [
+        "cold_temperature",
+        "low_alkalinity",
+        "variable_loading"
+      ]
+    },
+    "high_DO": {
+      "symptoms": [
+        "Stable nitrification",
+        "Higher blower power cost",
+        "Potential pin floc if sludge very old (indirect)"
+      ],
+      "biological_effects": [
+        "Supports nitrifiers",
+        "May push system toward endogenous if combined with low F/M"
+      ],
+      "process_impacts": [
+        "Higher energy use",
+        "Potential over-aeration"
+      ],
+      "best_first_actions": [
+        "Confirm DO target is appropriate (avoid excessive)",
+        "Optimize aeration control (VFD/valves)"
+      ],
+      "secondary_actions": [
+        "Review F/M and SRT targets"
+      ],
+      "common_confusions": [
+        "low_FM",
+        "high_SRT"
+      ]
+    },
+    "anoxic_conditions": {
+      "symptoms": [
+        "Nitrate reduction",
+        "Nitrogen gas bubbles",
+        "Possible rising sludge if occurs in clarifier"
+      ],
+      "biological_effects": [
+        "Enables denitrification",
+        "Consumes carbon source"
+      ],
+      "process_impacts": [
+        "Improves TN removal when controlled",
+        "Can cause rising sludge when uncontrolled"
+      ],
+      "best_first_actions": [
+        "Confirm anoxic zone mixing (no aeration)",
+        "Verify carbon availability for denitrification"
+      ],
+      "secondary_actions": [
+        "Adjust internal recycle rates if applicable"
+      ],
+      "common_confusions": [
+        "low_DO",
+        "carbon_deficiency"
+      ]
+    },
+    "high_FM": {
+      "symptoms": [
+        "Young sludge",
+        "Dispersed growth",
+        "Cloudy effluent",
+        "High oxygen demand",
+        "Foaming possible"
+      ],
+      "biological_effects": [
+        "Favors fast-growing bacteria/flagellates",
+        "Can reduce floc formation"
+      ],
+      "process_impacts": [
+        "Effluent TSS increase",
+        "Unstable settling",
+        "Higher BOD/COD breakthrough risk"
+      ],
+      "best_first_actions": [
+        "Increase RAS (if blanket permits)",
+        "Reduce wasting temporarily (increase SRT)",
+        "Increase aeration to meet demand"
+      ],
+      "secondary_actions": [
+        "Investigate loading source change",
+        "Increase equalization if available"
+      ],
+      "common_confusions": [
+        "low_DO",
+        "shock_loading",
+        "variable_loading"
+      ]
+    },
+    "low_FM": {
+      "symptoms": [
+        "Old sludge indicators",
+        "Pin floc",
+        "Very clear effluent but fragile floc",
+        "Foam may persist (if grease-related)"
+      ],
+      "biological_effects": [
+        "Endogenous respiration",
+        "Favors rotifers/nematodes/stalked ciliates"
+      ],
+      "process_impacts": [
+        "Reduced sludge production",
+        "Potential poor settleability if too old"
+      ],
+      "best_first_actions": [
+        "Increase wasting (lower SRT)",
+        "Confirm target MLSS/MLVSS"
+      ],
+      "secondary_actions": [
+        "Adjust RAS to maintain blanket",
+        "Review aeration efficiency (avoid over-aeration)"
+      ],
+      "common_confusions": [
+        "high_SRT",
+        "cold_temperature"
+      ]
+    },
+    "high_SRT": {
+      "symptoms": [
+        "Old sludge indicators",
+        "Pin floc",
+        "Low F/M",
+        "Stable nitrification (unless limited)"
+      ],
+      "biological_effects": [
+        "Supports nitrifiers",
+        "Shifts toward endogenous"
+      ],
+      "process_impacts": [
+        "Possible higher effluent TSS if pin floc",
+        "Lower sludge yield"
+      ],
+      "best_first_actions": [
+        "Increase wasting to reduce SRT",
+        "Confirm clarifier blanket depth control"
+      ],
+      "secondary_actions": [
+        "Rebalance aeration to avoid over-oxidation"
+      ],
+      "common_confusions": [
+        "low_FM",
+        "cold_temperature"
+      ]
+    },
+    "low_SRT": {
+      "symptoms": [
+        "Loss of nitrification",
+        "Young sludge",
+        "Higher effluent ammonia",
+        "Potential higher effluent BOD"
+      ],
+      "biological_effects": [
+        "Washes out slow-growing nitrifiers"
+      ],
+      "process_impacts": [
+        "Ammonia limit violation risk",
+        "Reduced stability"
+      ],
+      "best_first_actions": [
+        "Reduce wasting (increase SRT)",
+        "Confirm sludge inventory and RAS operation"
+      ],
+      "secondary_actions": [
+        "Check for hydraulic washout / clarifier issues"
+      ],
+      "common_confusions": [
+        "toxic_shock",
+        "cold_temperature",
+        "low_alkalinity"
+      ]
+    },
+    "variable_loading": {
+      "symptoms": [
+        "Swinging DO demand",
+        "Fluctuating effluent",
+        "Inconsistent settling"
+      ],
+      "biological_effects": [
+        "Community instability"
+      ],
+      "process_impacts": [
+        "Harder control, upset potential"
+      ],
+      "best_first_actions": [
+        "Stabilize flow/load with equalization where possible",
+        "Tune aeration control response"
+      ],
+      "secondary_actions": [
+        "Review diurnal patterns and adjust operations schedule"
+      ],
+      "common_confusions": [
+        "shock_loading"
+      ]
+    },
+    "shock_loading": {
+      "symptoms": [
+        "Rapid DO drop",
+        "Cloudy effluent",
+        "Young sludge shift",
+        "Higher oxygen demand"
+      ],
+      "biological_effects": [
+        "Overwhelms biomass temporarily"
+      ],
+      "process_impacts": [
+        "Short-term effluent degradation"
+      ],
+      "best_first_actions": [
+        "Increase aeration",
+        "Use equalization if available",
+        "Monitor clarifier blankets closely"
+      ],
+      "secondary_actions": [
+        "Investigate source and timing"
+      ],
+      "common_confusions": [
+        "high_FM",
+        "toxic_shock",
+        "variable_loading"
+      ]
+    },
+    "nutrient_deficiency": {
+      "symptoms": [
+        "Poor floc formation",
+        "Filamentous bulking",
+        "High effluent turbidity"
+      ],
+      "biological_effects": [
+        "Limits biomass growth and floc structure"
+      ],
+      "process_impacts": [
+        "Reduced BOD removal stability"
+      ],
+      "best_first_actions": [
+        "Confirm N and P availability (per SOP)",
+        "Verify dosing systems if used"
+      ],
+      "secondary_actions": [
+        "Coordinate with influent source control"
+      ],
+      "common_confusions": [
+        "low_DO",
+        "high_FM"
+      ]
+    },
+    "low_alkalinity": {
+      "symptoms": [
+        "pH trending downward",
+        "Reduced nitrification",
+        "Effluent ammonia increase",
+        "Possible nitrite accumulation"
+      ],
+      "biological_effects": [
+        "Limits nitrifiers",
+        "Reduces buffering capacity"
+      ],
+      "process_impacts": [
+        "Nitrification failure risk",
+        "Permit ammonia risk"
+      ],
+      "best_first_actions": [
+        "Add alkalinity (per SOP)",
+        "Verify alkalinity testing and trending"
+      ],
+      "secondary_actions": [
+        "Investigate influent alkalinity change"
+      ],
+      "common_confusions": [
+        "cold_temperature",
+        "toxic_shock",
+        "low_DO"
+      ]
+    },
+    "toxic_shock": {
+      "symptoms": [
+        "Sudden performance loss",
+        "Biomass stress/die-off",
+        "Effluent BOD/TSS spike",
+        "Nitrification loss"
+      ],
+      "biological_effects": [
+        "Kills/inhibits biomass, nitrifiers most sensitive"
+      ],
+      "process_impacts": [
+        "Immediate permit risk",
+        "Recovery time required"
+      ],
+      "best_first_actions": [
+        "Identify/isolate source",
+        "Increase monitoring/sampling",
+        "Protect biomass (adjust wasting, maintain aeration)"
+      ],
+      "secondary_actions": [
+        "Report per requirements if applicable"
+      ],
+      "common_confusions": [
+        "shock_loading",
+        "low_DO"
+      ]
+    },
+    "cold_temperature": {
+      "symptoms": [
+        "Weaker nitrification",
+        "Need higher SRT",
+        "Slower reaction rates"
+      ],
+      "biological_effects": [
+        "Slows nitrifiers most strongly"
+      ],
+      "process_impacts": [
+        "Ammonia breakthrough risk"
+      ],
+      "best_first_actions": [
+        "Increase SRT (reduce wasting)",
+        "Maintain adequate DO",
+        "Trend ammonia/nitrite/nitrate"
+      ],
+      "secondary_actions": [
+        "Check alkalinity and pH support"
+      ],
+      "common_confusions": [
+        "low_SRT",
+        "low_alkalinity"
+      ]
+    },
+    "septic_influent": {
+      "symptoms": [
+        "Odors (H2S)",
+        "Low DO at headworks",
+        "Bulking tendencies",
+        "Scum/foam possible"
+      ],
+      "biological_effects": [
+        "Selects for septic-condition filaments",
+        "Sulfide-related stress"
+      ],
+      "process_impacts": [
+        "Corrosion/odor",
+        "Process instability"
+      ],
+      "best_first_actions": [
+        "Control septicity upstream per SOP",
+        "Increase upstream aeration/mixing where possible",
+        "Monitor DO and sulfide"
+      ],
+      "secondary_actions": [
+        "Investigate collection system issues"
+      ],
+      "common_confusions": [
+        "low_DO",
+        "grease_loading"
+      ]
+    },
+    "grease_loading": {
+      "symptoms": [
+        "Persistent brown stable foam",
+        "Scum buildup",
+        "FOG visible"
+      ],
+      "biological_effects": [
+        "Selects for grease-related foam formers"
+      ],
+      "process_impacts": [
+        "Operational nuisance",
+        "Solids handling issues"
+      ],
+      "best_first_actions": [
+        "Reduce grease sources (pretreatment)",
+        "Skim/handle scum aggressively",
+        "Consider lowering SRT if appropriate"
+      ],
+      "secondary_actions": [
+        "Foam control per SOP"
+      ],
+      "common_confusions": [
+        "low_FM",
+        "high_SRT"
+      ]
+    },
+    "carbon_deficiency": {
+      "symptoms": [
+        "Poor denitrification",
+        "Higher nitrate in effluent",
+        "Little/no nitrogen gas formation"
+      ],
+      "biological_effects": [
+        "Limits denitrifiers"
+      ],
+      "process_impacts": [
+        "TN removal issues"
+      ],
+      "best_first_actions": [
+        "Confirm carbon availability",
+        "Add carbon source per SOP (if used)"
+      ],
+      "secondary_actions": [
+        "Adjust internal recycle to optimize anoxic contact"
+      ],
+      "common_confusions": [
+        "anoxic_conditions"
+      ]
+    }
+  },
+  "organism_groups": {
+    "young_sludge_indicators": {
+      "requires": [
+        "High F/M or increasing load",
+        "Low to moderate SRT"
+      ],
+      "indicates": [
+        "Young sludge",
+        "Rapid growth state"
+      ],
+      "associated_conditions": [
+        "high_FM",
+        "shock_loading",
+        "variable_loading",
+        "low_SRT"
+      ],
+      "symptoms": [
+        "Dispersed growth",
+        "Cloudy effluent",
+        "Poor settling"
+      ],
+      "corrections": [
+        "Increase SRT (reduce wasting)",
+        "Stabilize loading",
+        "Ensure adequate DO"
+      ],
+      "sensitive_to": [
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "low_DO"
+      ]
+    },
+    "old_sludge_indicators": {
+      "requires": [
+        "Low F/M",
+        "High SRT",
+        "Stable conditions"
+      ],
+      "indicates": [
+        "Old sludge",
+        "Endogenous respiration"
+      ],
+      "associated_conditions": [
+        "low_FM",
+        "high_SRT",
+        "cold_temperature"
+      ],
+      "symptoms": [
+        "Pin floc",
+        "Fragile floc"
+      ],
+      "corrections": [
+        "Increase wasting (reduce SRT)",
+        "Maintain blanket control"
+      ],
+      "sensitive_to": [
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "stable_sludge_indicators"
+      ]
+    },
+    "stable_sludge_indicators": {
+      "requires": [
+        "Stable loading",
+        "Adequate DO",
+        "Balanced SRT"
+      ],
+      "indicates": [
+        "Stable treatment",
+        "Good floc"
+      ],
+      "associated_conditions": [
+        "borderline_DO",
+        "variable_loading"
+      ],
+      "symptoms": [
+        "Good settling",
+        "Clear effluent"
+      ],
+      "corrections": [
+        "Maintain stable operations"
+      ],
+      "sensitive_to": [
+        "shock_loading",
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "old_sludge_indicators"
+      ]
+    },
+    "low_DO_filaments": {
+      "requires": [
+        "Low DO zones",
+        "Poor aeration distribution"
+      ],
+      "indicates": [
+        "Oxygen limitation",
+        "Bulking risk"
+      ],
+      "associated_conditions": [
+        "low_DO",
+        "borderline_DO"
+      ],
+      "symptoms": [
+        "High SVI",
+        "Poor settling",
+        "Filaments extending from floc"
+      ],
+      "corrections": [
+        "Increase aeration",
+        "Improve air distribution",
+        "Fix diffuser/blower issues"
+      ],
+      "sensitive_to": [
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "nutrient_deficiency_filaments",
+        "septic_condition_filaments"
+      ]
+    },
+    "nutrient_deficiency_filaments": {
+      "requires": [
+        "Low N or P relative to load"
+      ],
+      "indicates": [
+        "Nutrient-limited growth"
+      ],
+      "associated_conditions": [
+        "nutrient_deficiency"
+      ],
+      "symptoms": [
+        "Bulking",
+        "Weak floc",
+        "High turbidity"
+      ],
+      "corrections": [
+        "Restore nutrient balance per SOP"
+      ],
+      "sensitive_to": [
+        "variable_loading"
+      ],
+      "confused_with": [
+        "low_DO_filaments",
+        "high_FM"
+      ]
+    },
+    "septic_condition_filaments": {
+      "requires": [
+        "Septic influent / sulfide conditions"
+      ],
+      "indicates": [
+        "Septic stress"
+      ],
+      "associated_conditions": [
+        "septic_influent",
+        "low_DO"
+      ],
+      "symptoms": [
+        "Bulking",
+        "Odors",
+        "Poor settling"
+      ],
+      "corrections": [
+        "Control septicity",
+        "Increase aeration"
+      ],
+      "sensitive_to": [
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "low_DO_filaments"
+      ]
+    },
+    "grease_related_foam_formers": {
+      "requires": [
+        "FOG in influent",
+        "Often higher SRT"
+      ],
+      "indicates": [
+        "Persistent foam/scum risk"
+      ],
+      "associated_conditions": [
+        "grease_loading",
+        "high_SRT",
+        "low_FM"
+      ],
+      "symptoms": [
+        "Brown stable foam",
+        "Scum buildup"
+      ],
+      "corrections": [
+        "Reduce grease sources",
+        "Improve skimming",
+        "Lower SRT if appropriate"
+      ],
+      "sensitive_to": [
+        "shock_loading"
+      ],
+      "confused_with": [
+        "young_sludge_indicators"
+      ]
+    },
+    "ammonia_oxidizers": {
+      "requires": [
+        "Adequate DO",
+        "Adequate alkalinity",
+        "Sufficient SRT"
+      ],
+      "indicates": [
+        "Ammonia -> nitrite conversion"
+      ],
+      "associated_conditions": [
+        "high_SRT",
+        "high_DO"
+      ],
+      "symptoms": [
+        "Lower ammonia when stable"
+      ],
+      "corrections": [
+        "Increase SRT",
+        "Increase DO",
+        "Add alkalinity if low"
+      ],
+      "sensitive_to": [
+        "toxic_shock",
+        "cold_temperature",
+        "low_alkalinity",
+        "low_DO"
+      ],
+      "confused_with": [
+        "nitrite_oxidizers"
+      ]
+    },
+    "nitrite_oxidizers": {
+      "requires": [
+        "Adequate DO",
+        "Adequate alkalinity",
+        "Sufficient SRT"
+      ],
+      "indicates": [
+        "Nitrite -> nitrate conversion"
+      ],
+      "associated_conditions": [
+        "high_SRT",
+        "high_DO"
+      ],
+      "symptoms": [
+        "Low nitrite when stable"
+      ],
+      "corrections": [
+        "Increase SRT",
+        "Increase DO",
+        "Add alkalinity if low"
+      ],
+      "sensitive_to": [
+        "toxic_shock",
+        "cold_temperature",
+        "low_alkalinity",
+        "low_DO"
+      ],
+      "confused_with": [
+        "ammonia_oxidizers"
+      ]
+    },
+    "denitrifiers": {
+      "requires": [
+        "Anoxic conditions",
+        "Carbon source"
+      ],
+      "indicates": [
+        "Nitrate -> nitrogen gas reduction"
+      ],
+      "associated_conditions": [
+        "anoxic_conditions",
+        "carbon_deficiency"
+      ],
+      "symptoms": [
+        "Nitrate reduction",
+        "Gas bubbles if in clarifier"
+      ],
+      "corrections": [
+        "Maintain proper anoxic zone",
+        "Add carbon if needed"
+      ],
+      "sensitive_to": [
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "low_DO"
+      ]
+    },
+    "early_protozoa": {
+      "requires": [
+        "Young sludge / high F/M"
+      ],
+      "indicates": [
+        "Early stabilization"
+      ],
+      "associated_conditions": [
+        "high_FM",
+        "shock_loading"
+      ],
+      "symptoms": [
+        "Cloudy effluent",
+        "Poor settling"
+      ],
+      "corrections": [
+        "Increase SRT",
+        "Stabilize load"
+      ],
+      "sensitive_to": [
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "young_sludge_indicators"
+      ]
+    },
+    "mature_protozoa": {
+      "requires": [
+        "Stable conditions",
+        "Moderate SRT",
+        "Good DO"
+      ],
+      "indicates": [
+        "Stable treatment"
+      ],
+      "associated_conditions": [
+        "stable_sludge_indicators"
+      ],
+      "symptoms": [
+        "Clear effluent",
+        "Good settling"
+      ],
+      "corrections": [
+        "Maintain stable operations"
+      ],
+      "sensitive_to": [
+        "shock_loading",
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "old_sludge_indicators"
+      ]
+    },
+    "metazoa": {
+      "requires": [
+        "Older sludge",
+        "Low F/M"
+      ],
+      "indicates": [
+        "High sludge age"
+      ],
+      "associated_conditions": [
+        "low_FM",
+        "high_SRT"
+      ],
+      "symptoms": [
+        "Pin floc possible"
+      ],
+      "corrections": [
+        "Increase wasting if too old"
+      ],
+      "sensitive_to": [
+        "toxic_shock"
+      ],
+      "confused_with": [
+        "mature_protozoa"
+      ]
+    }
+  },
+  "process_adjustments": {
+    "increase_aeration": {
+      "effective_for": [
+        "low_DO",
+        "borderline_DO",
+        "shock_loading",
+        "high_FM"
+      ],
+      "not_effective_for": [
+        "low_alkalinity",
+        "toxic_shock"
+      ],
+      "may_worsen": [
+        "low_FM",
+        "high_SRT"
+      ]
+    },
+    "increase_WAS": {
+      "effective_for": [
+        "high_SRT",
+        "low_FM",
+        "old_sludge_indicators"
+      ],
+      "not_effective_for": [
+        "low_SRT",
+        "high_FM"
+      ],
+      "may_worsen": [
+        "cold_temperature"
+      ]
+    },
+    "decrease_WAS": {
+      "effective_for": [
+        "low_SRT",
+        "high_FM",
+        "cold_temperature"
+      ],
+      "not_effective_for": [
+        "high_SRT",
+        "low_FM"
+      ],
+      "may_worsen": [
+        "high_SRT",
+        "grease_loading"
+      ]
+    },
+    "add_alkalinity": {
+      "effective_for": [
+        "low_alkalinity",
+        "low_pH"
+      ],
+      "not_effective_for": [
+        "low_DO",
+        "toxic_shock"
+      ],
+      "may_worsen": []
+    },
+    "add_carbon_source": {
+      "effective_for": [
+        "carbon_deficiency"
+      ],
+      "not_effective_for": [
+        "low_DO"
+      ],
+      "may_worsen": [
+        "high_FM"
+      ]
+    },
+    "isolate_toxic_source": {
+      "effective_for": [
+        "toxic_shock",
+        "heavy_metals_present"
+      ],
+      "not_effective_for": [
+        "low_DO"
+      ],
+      "may_worsen": []
+    },
+    "increase_SRT": {
+      "effective_for": [
+        "low_SRT",
+        "cold_temperature"
+      ],
+      "not_effective_for": [
+        "high_SRT"
+      ],
+      "may_worsen": [
+        "grease_loading"
+      ]
+    },
+    "decrease_SRT": {
+      "effective_for": [
+        "high_SRT",
+        "old_sludge_indicators"
+      ],
+      "not_effective_for": [
+        "cold_temperature"
+      ],
+      "may_worsen": [
+        "nitrification_failure"
+      ]
+    }
+  },
+  "process_states": {
+    "high_SVI": {
+      "description": "High SVI; bulking/poor settling.",
+      "commonly_caused_by": [
+        "low_DO",
+        "nutrient_deficiency"
+      ],
+      "common_confusions": [
+        "high_FM"
+      ]
+    },
+    "cloudy_effluent": {
+      "description": "Turbid effluent / solids carryover.",
+      "commonly_caused_by": [
+        "high_FM",
+        "low_DO",
+        "pin_floc"
+      ],
+      "common_confusions": [
+        "toxic_shock"
+      ]
+    },
+    "pin_floc": {
+      "description": "Small fragile floc.",
+      "commonly_caused_by": [
+        "low_FM",
+        "high_SRT"
+      ],
+      "common_confusions": [
+        "toxic_shock"
+      ]
+    },
+    "rising_sludge": {
+      "description": "Blanket lifts from gas formation.",
+      "commonly_caused_by": [
+        "anoxic_conditions",
+        "septic_influent"
+      ],
+      "common_confusions": [
+        "hydraulic_overload"
+      ]
+    },
+    "ammonia_breakthrough": {
+      "description": "High effluent ammonia.",
+      "commonly_caused_by": [
+        "low_SRT",
+        "cold_temperature",
+        "low_alkalinity",
+        "low_DO",
+        "toxic_shock"
+      ],
+      "common_confusions": [
+        "high_ammonia"
+      ]
+    }
+  },
+  "operational_risks": {
+    "ammonia_limit_violation": {
+      "triggers": [
+        "ammonia_breakthrough",
+        "low_SRT",
+        "cold_temperature",
+        "low_alkalinity",
+        "low_DO",
+        "toxic_shock"
+      ],
+      "mitigations": [
+        "Increase SRT",
+        "Maintain adequate DO",
+        "Add alkalinity",
+        "Isolate toxicity source"
+      ]
+    },
+    "nitrification_failure": {
+      "triggers": [
+        "low_SRT",
+        "low_DO",
+        "low_alkalinity",
+        "cold_temperature",
+        "toxic_shock"
+      ],
+      "mitigations": [
+        "Increase SRT",
+        "Increase DO",
+        "Add alkalinity",
+        "Source control for toxicity"
+      ]
+    },
+    "bulking_event": {
+      "triggers": [
+        "high_SVI",
+        "low_DO",
+        "nutrient_deficiency",
+        "septic_influent"
+      ],
+      "mitigations": [
+        "Fix DO distribution",
+        "Correct nutrient balance",
+        "Control septicity"
+      ]
+    }
+  },
+  "question_templates": {
+    "direct_knowledge": [
+      "Which condition most directly promotes {target}?",
+      "Which condition is most likely to cause {target}?",
+      "Which biological group is most sensitive to {target}?"
+    ],
+    "most_likely_cause": [
+      "A plant reports: {state_list}. What is the most likely cause?",
+      "Operators observe: {state_list}. Which condition best explains this?"
+    ],
+    "best_first_action": [
+      "Given: {state_list}. What is the best FIRST operational adjustment?",
+      "A system shows: {state_list}. What is the best FIRST step?"
+    ],
+    "risk_identification": [
+      "If {condition} continues, what is the most immediate operational risk?",
+      "A prolonged {condition} most increases the risk of what outcome?"
+    ]
+  }
+}
