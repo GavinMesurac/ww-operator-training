@@ -64,7 +64,6 @@
       </label>
 
       <button id="btnGenerate">Generate Bank</button>
-      <button id="btnMicroOne">Generate Microbiology (1)</button>
       <button id="btnDownload" disabled>Download questions.json</button>
       <button id="btnDownloadAudit" disabled>Download audit.json</button>
     </div>
@@ -82,7 +81,7 @@
   </div>
 
   <div class="card">
-    <div class="small">Preview (first 20 math questions OR last microbiology question generated):</div>
+    <div class="small">Preview (first 20 questions):</div>
     <pre id="preview">(none)</pre>
   </div>
 
@@ -1132,22 +1131,6 @@ document.getElementById("btnGenerate").addEventListener("click", () => {
   });
 });
 
-
-document.getElementById("btnMicroOne").addEventListener("click", () => {
-  try {
-    generateOneGeneric();
-  } catch (e) {
-    console.error(e);
-    const status = document.getElementById("status");
-    if (status) {
-      status.textContent = "ERROR (Micro): " + (e?.message || e);
-      status.className = "bad";
-    } else {
-      alert("ERROR (Micro): " + (e?.message || e));
-    }
-  }
-});
-
 document.getElementById("btnDownload").addEventListener("click", () => {
   if (!BANK) return;
   downloadJSON("questions.json", BANK);
@@ -1182,11 +1165,99 @@ function makeChoices(correct, closeA, closeB, wrong){
   return { choices, correctIndex };
 }
 
+
+function formatListNatural(arr){
+  if(!arr || arr.length === 0) return "";
+  if(arr.length === 1) return arr[0].toLowerCase();
+  if(arr.length === 2) return arr[0].toLowerCase() + " and " + arr[1].toLowerCase();
+  const lower = arr.map(x => x.toLowerCase());
+  return lower.slice(0, -1).join(", ") + ", and " + lower[lower.length - 1];
+}
+
 function generateOneGeneric(){
   if(!MICRO_TRUTH){
     alert("Truth file not loaded yet.");
     return;
   }
+
+  const qType = ["direct","cause","action"][Math.floor(Math.random()*3)];
+  const conditionKeys = Object.keys(MICRO_TRUTH.conditions);
+  const condKey = conditionKeys[Math.floor(Math.random()*conditionKeys.length)];
+  const cond = MICRO_TRUTH.conditions[condKey];
+
+  let question = "";
+  let correct = "";
+  let rationale = "";
+
+  if(qType === "direct"){
+    const targets = cond.biological_effects?.length ? cond.biological_effects : cond.symptoms;
+    const t = targets[Math.floor(Math.random()*targets.length)].toLowerCase();
+    question = `Which condition is most likely to ${t}?`;
+    correct = condKey.replace(/_/g," ");
+    rationale = `${condKey.replace(/_/g," ")} is associated with ${t}.`;
+  }
+
+  if(qType === "cause"){
+    const states = cond.symptoms.slice(0,3);
+    question = `A plant is experiencing ${formatListNatural(states)}. What is the most likely cause?`;
+    correct = condKey.replace(/_/g," ");
+    rationale = `These symptoms are commonly associated with ${condKey.replace(/_/g," ")}.`;
+  }
+
+  if(qType === "action"){
+    const states = cond.symptoms.slice(0,3);
+    question = `A plant is experiencing ${formatListNatural(states)}. What is the best first action?`;
+    correct = cond.best_first_actions[
+      Math.floor(Math.random()*cond.best_first_actions.length)
+    ];
+    rationale = `This is listed as a best first action for ${condKey.replace(/_/g," ")}.`;
+  }
+
+  const conf = cond.common_confusions || [];
+
+  function randomCondition(){
+    return conditionKeys[Math.floor(Math.random()*conditionKeys.length)];
+  }
+
+  let close1 = conf.length ? conf[Math.floor(Math.random()*conf.length)] : randomCondition();
+  let close2 = conf.length ? conf[Math.floor(Math.random()*conf.length)] : randomCondition();
+  let wrong = randomCondition();
+
+  while(close2 === close1) close2 = randomCondition();
+  while(wrong === condKey || conf.includes(wrong)) wrong = randomCondition();
+
+  close1 = close1.replace(/_/g," ");
+  close2 = close2.replace(/_/g," ");
+  wrong = wrong.replace(/_/g," ");
+
+  let choices;
+  let correctIndex;
+
+  if(qType === "action"){
+    const actions = Object.keys(MICRO_TRUTH.process_adjustments);
+    const distractor1 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
+    const distractor2 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
+    const distractor3 = actions[Math.floor(Math.random()*actions.length)].replace(/_/g," ");
+
+    choices = [correct, distractor1, distractor2, distractor3];
+    choices = shuffle(choices);
+    correctIndex = choices.indexOf(correct);
+  } else {
+    choices = [correct, close1, close2, wrong];
+    choices = shuffle(choices);
+    correctIndex = choices.indexOf(correct);
+  }
+
+  showGenericQuestion({
+    family: "Microbiology",
+    type: qType,
+    question,
+    choices,
+    correctIndex,
+    rationale
+  });
+}
+
 
   // Pick question type randomly
   const qType = ["direct", "cause", "action"][Math.floor(Math.random()*3)];
