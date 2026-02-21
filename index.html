@@ -64,6 +64,7 @@
       </label>
 
       <button id="btnGenerate">Generate Bank</button>
+      <button id="btnMicroOne">Generate Microbiology (1)</button>
       <button id="btnDownload" disabled>Download questions.json</button>
       <button id="btnDownloadAudit" disabled>Download audit.json</button>
     </div>
@@ -81,7 +82,7 @@
   </div>
 
   <div class="card">
-    <div class="small">Preview (first 20 questions):</div>
+    <div class="small">Preview (first 20 math questions OR last microbiology question generated):</div>
     <pre id="preview">(none)</pre>
   </div>
 
@@ -1131,6 +1132,22 @@ document.getElementById("btnGenerate").addEventListener("click", () => {
   });
 });
 
+
+document.getElementById("btnMicroOne").addEventListener("click", () => {
+  try {
+    generateOneGeneric();
+  } catch (e) {
+    console.error(e);
+    const status = document.getElementById("status");
+    if (status) {
+      status.textContent = "ERROR (Micro): " + (e?.message || e);
+      status.className = "bad";
+    } else {
+      alert("ERROR (Micro): " + (e?.message || e));
+    }
+  }
+});
+
 document.getElementById("btnDownload").addEventListener("click", () => {
   if (!BANK) return;
   downloadJSON("questions.json", BANK);
@@ -1271,3 +1288,4 @@ function showGenericQuestion(q){
 
 </body>
 </html>
+
