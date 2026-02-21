@@ -86,6 +86,17 @@
   </div>
 
 <script>
+  let MICRO_TRUTH = null;
+
+async function loadMicrobiologyTruth() {
+    try {
+        const response = await fetch("microbiology_truth_v1.json");
+        MICRO_TRUTH = await response.json();
+        console.log("Microbiology truth loaded.");
+    } catch (error) {
+        console.error("Failed to load microbiology truth file:", error);
+    }
+}
 // =========================
 // Utilities
 // =========================
@@ -1129,6 +1140,7 @@ document.getElementById("btnDownloadAudit").addEventListener("click", () => {
   if (!AUDIT) return;
   downloadJSON("audit.json", AUDIT);
 });
+  loadMicrobiologyTruth();
 </script>
 
 </body>
