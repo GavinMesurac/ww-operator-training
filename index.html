@@ -1141,6 +1141,132 @@ document.getElementById("btnDownloadAudit").addEventListener("click", () => {
   downloadJSON("audit.json", AUDIT);
 });
   loadMicrobiologyTruth();
+  function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function pickKey(obj){
+  const keys = Object.keys(obj);
+  return keys[Math.floor(Math.random()*keys.length)];
+}
+
+function uniquePush(arr, v){
+  if(v && !arr.includes(v)) arr.push(v);
+}
+
+function makeChoices(correct, closeA, closeB, wrong){
+  const choices = shuffle([correct, closeA, closeB, wrong]);
+  const correctIndex = choices.indexOf(correct);
+  return { choices, correctIndex };
+}
+
+function generateOneGeneric(){
+  if(!MICRO_TRUTH){
+    alert("Truth file not loaded yet.");
+    return;
+  }
+
+  // Pick question type randomly
+  const qType = ["direct", "cause", "action"][Math.floor(Math.random()*3)];
+
+  // Pick a condition as the core driver
+  const condKey = pickKey(MICRO_TRUTH.conditions);
+  const cond = MICRO_TRUTH.conditions[condKey];
+
+  // Build a prompt and correct answer depending on type
+  let question = "";
+  let correct = "";
+  let rationale = "";
+
+  if(qType === "direct"){
+    const target = (cond.biological_effects?.length ? cond.biological_effects : cond.symptoms);
+    const t = target && target.length ? target[Math.floor(Math.random()*target.length)] : "process upset";
+    question = `Which condition is most likely to cause: "${t}"?`;
+    correct = condKey.replace(/_/g," ");
+    rationale = `This effect is associated with ${condKey.replace(/_/g," ")} in the truth library.`;
+  }
+
+  if(qType === "cause"){
+    const states = [];
+    (cond.symptoms || []).slice(0,3).forEach(s => uniquePush(states, s));
+    question = `Operators report: ${states.join(", ")}. What is the MOST likely cause?`;
+    correct = condKey.replace(/_/g," ");
+    rationale = `These symptoms match ${condKey.replace(/_/g," ")}.`;
+  }
+
+  if(qType === "action"){
+    const states = [];
+    (cond.symptoms || []).slice(0,3).forEach(s => uniquePush(states, s));
+    question = `A plant shows: ${states.join(", ")}. What is the BEST FIRST action?`;
+    correct = (cond.best_first_actions && cond.best_first_actions.length)
+      ? cond.best_first_actions[Math.floor(Math.random()*cond.best_first_actions.length)]
+      : "Increase monitoring and verify key measurements";
+    rationale = `Best-first actions for ${condKey.replace(/_/g," ")} are listed in the truth library.`;
+  }
+
+  // Build close distractors from confusions
+  const conf = cond.common_confusions || [];
+  const close1Key = conf.length ? conf[Math.floor(Math.random()*conf.length)] : pickKey(MICRO_TRUTH.conditions);
+  let close2Key = conf.length ? conf[Math.floor(Math.random()*conf.length)] : pickKey(MICRO_TRUTH.conditions);
+  if(close2Key === close1Key) close2Key = pickKey(MICRO_TRUTH.conditions);
+
+  const closeA = close1Key.replace(/_/g," ");
+  const closeB = close2Key.replace(/_/g," ");
+
+  // Completely wrong distractor: pick something not in confusions and not the correct
+  let wrongKey = pickKey(MICRO_TRUTH.conditions);
+  let safetyCounter = 0;
+  while((wrongKey === condKey || conf.includes(wrongKey)) && safetyCounter < 50){
+    wrongKey = pickKey(MICRO_TRUTH.conditions);
+    safetyCounter++;
+  }
+  const wrong = wrongKey.replace(/_/g," ");
+
+  // If this is an "action" question, distractors should be actions, not conditions
+  if(qType === "action"){
+    const allActions = Object.keys(MICRO_TRUTH.process_adjustments || {});
+    const goodButWrong = allActions.length ? allActions[Math.floor(Math.random()*allActions.length)].replace(/_/g," ") : "Increase RAS";
+    const veryWrong = allActions.length ? allActions[Math.floor(Math.random()*allActions.length)].replace(/_/g," ") : "Decrease aeration";
+
+    const { choices, correctIndex } = makeChoices(correct, goodButWrong, closeA, veryWrong);
+
+    showGenericQuestion({
+      family: "Microbiology (dynamic)",
+      type: "best_first_action",
+      question,
+      choices,
+      correctIndex,
+      rationale
+    });
+    return;
+  }
+
+  const { choices, correctIndex } = makeChoices(correct, closeA, closeB, wrong);
+
+  showGenericQuestion({
+    family: "Microbiology (dynamic)",
+    type: qType,
+    question,
+    choices,
+    correctIndex,
+    rationale
+  });
+}
+
+function showGenericQuestion(q){
+  // Uses your existing preview box if present, otherwise creates one
+  const el = document.getElementById("preview") || document.getElementById("out");
+  if(!el){
+    alert("Could not find a preview element (id='preview' or id='out').");
+    return;
+  }
+  el.textContent = JSON.stringify(q, null, 2);
+}
 </script>
 
 </body>
