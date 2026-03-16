@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Practice</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">WW</div>
+        <div>
+          <h1>WW Operator Training</h1>
+          <div class="sub">Georgia-style training dashboard</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="practice.html">Practice</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="exam.html">Exam</a>
+        <a href="adaptive.html">Adaptive</a>
+        <a href="survival.html">Survival</a>
+        <a href="study.html">Study</a>
+        <a href="progress.html">Progress</a>
+        <a href="admin/generator.html">Admin</a>
+      </div>
+    </div>
+    
+<div class="grid">
+  <div class="card half">
+    <h2>Practice</h2>
+    <div class="small">Generate questions on demand. Great for quick reps.</div>
+    <hr/>
+    <div class="row">
+      <label>Mode</label>
+      <select id="modeSel">
+        <option value="mixed">Mixed</option>
+        <option value="math">Math</option>
+        <option value="nonmath">Non-Math</option>
+      </select>
+      <label>Math family</label>
+      <select id="mathSel"></select>
+      <label>Non-Math category</label>
+      <select id="nonmathSel"></select>
+      <button class="btn primary" id="nextBtn">Generate Question</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="pill">Answered: <span data-kpi="answered">0</span></span>
+      <span class="pill">Accuracy: <span data-kpi="accuracy">0%</span></span>
+      <span class="pill">Best Streak: <span data-kpi="bestStreak">0</span></span>
+    </div>
+  </div>
+  <div class="card half">
+    <h2>Session</h2>
+    <div class="notice" id="metaText">No question loaded yet.</div>
+  </div>
+  <div class="card">
+    <p class="qstem" id="qStem">Press Generate Question to begin.</p>
+    <div class="choices" id="qChoices"></div>
+    <div id="qExp" class="notice hidden" style="margin-top:12px"></div>
+  </div>
+</div>
+
+    <div class="footer">Front-end only • GitHub Pages ready • Session questions lock at test start.</div>
+  </div>
+  <script src="js/storage.js"></script>
+  <script src="js/page_helpers.js"></script>
+  <script src="generators/math/math_engine.js"></script>
+  <script src="generators/nonmath/nonmath_engine.js"></script>
+  <script src="js/quiz_engine.js"></script>
+  <script src="js/exam_engine.js"></script>
+  <script src="js/adaptive_engine.js"></script>
+  <script src="js/survival_engine.js"></script>
+  
+<script>
+(async function(){
+  WWPage.updateProgressKPI();
+  await WWNonMath.init();
+  WWPage.fillSelect(document.getElementById("mathSel"), WWMath.familyList);
+  WWPage.fillSelect(document.getElementById("nonmathSel"), WWNonMath.list());
+
+  const target = {
+    stem: document.getElementById("qStem"),
+    choices: document.getElementById("qChoices"),
+    explanation: document.getElementById("qExp"),
+    meta: document.getElementById("metaText")
+  };
+  let current = null;
+  let startTs = 0;
+  function render(q){
+    current = q; startTs = Date.now();
+    WWPage.renderQuestion(target, q, (idx, el) => {
+      const nodes = [...document.querySelectorAll(".choice")];
+      nodes.forEach((n,i)=>{ if(i===q.correct_index) n.classList.add("correct"); });
+      const correct = idx === q.correct_index;
+      if(!correct) el.classList.add("wrong");
+      target.explanation.classList.remove("hidden");
+      target.explanation.textContent = q.explanation;
+      WWStorage.updateProgress(q, correct, Date.now()-startTs);
+      WWPage.updateProgressKPI();
+      nodes.forEach(n=>n.onclick=null);
+    });
+  }
+  document.getElementById("nextBtn").onclick = async function(){
+    const mode = document.getElementById("modeSel").value;
+    if(mode==="math"){
+      render(WWMath.generate({family: document.getElementById("mathSel").value}));
+    } else if(mode==="nonmath"){
+      render(await WWNonMath.generate({category: document.getElementById("nonmathSel").value}));
+    } else {
+      if(Math.random()<0.5) render(WWMath.generate({family: document.getElementById("mathSel").value}));
+      else render(await WWNonMath.generate({category: document.getElementById("nonmathSel").value}));
+    }
+  };
+})();
+</script>
+
+</body>
+</html>

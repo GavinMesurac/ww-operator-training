@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Quiz</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">WW</div>
+        <div>
+          <h1>WW Operator Training</h1>
+          <div class="sub">Georgia-style training dashboard</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="practice.html">Practice</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="exam.html">Exam</a>
+        <a href="adaptive.html">Adaptive</a>
+        <a href="survival.html">Survival</a>
+        <a href="study.html">Study</a>
+        <a href="progress.html">Progress</a>
+        <a href="admin/generator.html">Admin</a>
+      </div>
+    </div>
+    
+<div class="grid">
+  <div class="card half">
+    <h2>Quiz Mode</h2>
+    <div class="small">Topic-based or mixed quizzes. Entire set is generated at the start and then locked.</div>
+    <hr/>
+    <div class="row">
+      <label>Mode</label>
+      <select id="modeSel">
+        <option value="mixed">Mixed</option>
+        <option value="math">Math</option>
+        <option value="nonmath">Non-Math</option>
+      </select>
+      <label>Length</label>
+      <select id="countSel">
+        <option>10</option><option selected>25</option><option>50</option><option>100</option>
+      </select>
+      <label>Math family</label><select id="mathSel"></select>
+      <label>Non-Math category</label><select id="nonmathSel"></select>
+      <button class="btn primary" id="startBtn">Start Quiz</button>
+    </div>
+  </div>
+  <div class="card half">
+    <h2>Status</h2>
+    <div class="row">
+      <span class="pill" id="progressPill">0 / 0</span>
+      <span class="pill" id="scorePill">0 correct</span>
+    </div>
+  </div>
+  <div class="card">
+    <p class="qstem" id="qStem">Start a quiz to begin.</p>
+    <div class="choices" id="qChoices"></div>
+    <div id="qExp" class="notice hidden" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="showBtn">Show Explanation</button>
+      <button class="btn good" id="nextBtn">Next</button>
+      <button class="btn" id="finishBtn">Finish Quiz</button>
+    </div>
+  </div>
+</div>
+
+    <div class="footer">Front-end only • GitHub Pages ready • Session questions lock at test start.</div>
+  </div>
+  <script src="js/storage.js"></script>
+  <script src="js/page_helpers.js"></script>
+  <script src="generators/math/math_engine.js"></script>
+  <script src="generators/nonmath/nonmath_engine.js"></script>
+  <script src="js/quiz_engine.js"></script>
+  <script src="js/exam_engine.js"></script>
+  <script src="js/adaptive_engine.js"></script>
+  <script src="js/survival_engine.js"></script>
+  
+<script>
+(async function(){
+  WWPage.updateProgressKPI();
+  await WWNonMath.init();
+  WWPage.fillSelect(document.getElementById("mathSel"), WWMath.familyList);
+  WWPage.fillSelect(document.getElementById("nonmathSel"), WWNonMath.list());
+
+  const target = {stem:qStem, choices:qChoices, explanation:qExp};
+  let quiz = [], idx=0, correct=0, startTs=0, current=null;
+
+  function updateStatus(){
+    document.getElementById("progressPill").textContent = `${Math.min(idx+1, quiz.length)} / ${quiz.length}`;
+    document.getElementById("scorePill").textContent = `${correct} correct`;
+  }
+  function render(i){
+    current = quiz[i];
+    if(!current){ qStem.textContent = "Quiz complete."; qChoices.innerHTML = ""; return; }
+    startTs = Date.now();
+    WWPage.renderQuestion(target, current, (choiceIdx, el) => {
+      const nodes = [...document.querySelectorAll(".choice")];
+      nodes.forEach((n,k)=>{ if(k===current.correct_index) n.classList.add("correct"); });
+      const ok = choiceIdx===current.correct_index;
+      if(!ok) el.classList.add("wrong"); else correct += 1;
+      qExp.classList.remove("hidden");
+      qExp.textContent = current.explanation;
+      WWStorage.updateProgress(current, ok, Date.now()-startTs);
+      WWPage.updateProgressKPI();
+      updateStatus();
+      nodes.forEach(n=>n.onclick=null);
+      current._answered = true;
+    });
+    updateStatus();
+  }
+
+  startBtn.onclick = async function(){
+    quiz = await WWQuizEngine.buildSet({
+      count: parseInt(countSel.value,10),
+      mode: modeSel.value,
+      mathFamily: mathSel.value,
+      nonmathCategory: nonmathSel.value
+    });
+    idx = 0; correct = 0;
+    sessionStorage.setItem("ww_current_quiz", JSON.stringify(quiz));
+    render(idx);
+  };
+  nextBtn.onclick = function(){ if(!quiz.length) return; idx += 1; if(idx<quiz.length) render(idx); else qStem.textContent = `Quiz complete. Score: ${correct} / ${quiz.length}`; };
+  showBtn.onclick = function(){ if(current){ qExp.classList.remove("hidden"); qExp.textContent = current.explanation; } };
+  finishBtn.onclick = function(){ if(!quiz.length) return; qStem.textContent = `Quiz complete. Score: ${correct} / ${quiz.length}`; qChoices.innerHTML=""; };
+})();
+</script>
+
+</body>
+</html>

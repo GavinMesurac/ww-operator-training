@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Progress</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">WW</div>
+        <div>
+          <h1>WW Operator Training</h1>
+          <div class="sub">Georgia-style training dashboard</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="practice.html">Practice</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="exam.html">Exam</a>
+        <a href="adaptive.html">Adaptive</a>
+        <a href="survival.html">Survival</a>
+        <a href="study.html">Study</a>
+        <a href="progress.html">Progress</a>
+        <a href="admin/generator.html">Admin</a>
+      </div>
+    </div>
+    
+<div class="grid">
+  <div class="card third"><div class="metric"><div class="small">Answered</div><div class="big" data-kpi="answered">0</div></div></div>
+  <div class="card third"><div class="metric"><div class="small">Accuracy</div><div class="big" data-kpi="accuracy">0%</div></div></div>
+  <div class="card third"><div class="metric"><div class="small">Best Streak</div><div class="big" data-kpi="bestStreak">0</div></div></div>
+
+  <div class="card half">
+    <h2>Weak Topics</h2>
+    <div id="weakBox" class="list"></div>
+  </div>
+  <div class="card half">
+    <h2>Exam History</h2>
+    <table class="table">
+      <thead><tr><th>Date</th><th>Score</th><th>Result</th></tr></thead>
+      <tbody id="examRows"></tbody>
+    </table>
+  </div>
+</div>
+
+    <div class="footer">Front-end only • GitHub Pages ready • Session questions lock at test start.</div>
+  </div>
+  <script src="js/storage.js"></script>
+  <script src="js/page_helpers.js"></script>
+  <script src="generators/math/math_engine.js"></script>
+  <script src="generators/nonmath/nonmath_engine.js"></script>
+  <script src="js/quiz_engine.js"></script>
+  <script src="js/exam_engine.js"></script>
+  <script src="js/adaptive_engine.js"></script>
+  <script src="js/survival_engine.js"></script>
+  
+<script>
+(function(){
+  WWPage.updateProgressKPI();
+  const p = WWStorage.getProgress();
+  weakBox.innerHTML = "";
+  (p.weakTags || []).slice(0,12).forEach(tag => {
+    const div = document.createElement("div");
+    div.className = "notice";
+    const stats = p.byTag[tag] || {seen:0,wrong:0,slow:0};
+    div.innerHTML = `<b>${tag}</b><div class="small">Seen: ${stats.seen} • Wrong: ${stats.wrong} • Slow: ${stats.slow}</div>`;
+    weakBox.appendChild(div);
+  });
+  if(!(p.weakTags||[]).length){
+    weakBox.innerHTML = '<div class="notice">No weak topics yet. Take quizzes to build progress.</div>';
+  }
+  examRows.innerHTML = "";
+  (p.examHistory || []).slice().reverse().forEach(ex => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${new Date(ex.date).toLocaleString()}</td><td>${ex.score}/${ex.total} (${ex.pct}%)</td><td>${ex.pass}</td>`;
+    examRows.appendChild(tr);
+  });
+})();
+</script>
+
+</body>
+</html>

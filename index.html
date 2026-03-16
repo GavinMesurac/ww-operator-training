@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>WW Operator Training</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">WW</div>
+        <div>
+          <h1>WW Operator Training</h1>
+          <div class="sub">Georgia-style training dashboard</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="practice.html">Practice</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="exam.html">Exam</a>
+        <a href="adaptive.html">Adaptive</a>
+        <a href="survival.html">Survival</a>
+        <a href="study.html">Study</a>
+        <a href="progress.html">Progress</a>
+        <a href="admin/generator.html">Admin</a>
+      </div>
+    </div>
+    
+<div class="grid hero">
+  <div class="card">
+    <h2>Train harder than the exam.</h2>
+    <p class="small">This build is training-first: quiz, exam, adaptive, survival, study, progress, and a private admin generator. Math and non-math are separate engines. Microbiology is included inside non-math.</p>
+    <div class="row" style="margin-top:12px">
+      <a class="btn primary" href="practice.html">Start Practice</a>
+      <a class="btn" href="quiz.html">Take Quiz</a>
+      <a class="btn" href="exam.html">Take Practice Exam</a>
+      <a class="btn" href="adaptive.html">Adaptive Training</a>
+      <a class="btn" href="survival.html">Survival Mode</a>
+    </div>
+  </div>
+  <div class="card quarter metric"><div class="small">Answered</div><div class="big" data-kpi="answered">0</div></div>
+  <div class="card quarter metric"><div class="small">Accuracy</div><div class="big" data-kpi="accuracy">0%</div></div>
+  <div class="card quarter metric"><div class="small">Best Streak</div><div class="big" data-kpi="bestStreak">0</div></div>
+  <div class="card quarter metric"><div class="small">Modes</div><div class="big">6</div></div>
+
+  <div class="card half">
+    <h3>Quiz Mode</h3>
+    <div class="small">Topic-based or mixed quizzes with explanations after each question. Choose math only, non-math only, or mixed.</div>
+  </div>
+  <div class="card half">
+    <h3>Exam Mode</h3>
+    <div class="small">110 questions, 100 graded and 10 pilot, 2-hour timer, review at the end.</div>
+  </div>
+  <div class="card half">
+    <h3>Adaptive Mode</h3>
+    <div class="small">Targets weak topics and raises difficulty as you improve.</div>
+  </div>
+  <div class="card half">
+    <h3>Survival Mode</h3>
+    <div class="small">Correct-answer streak system. One wrong answer resets the streak.</div>
+  </div>
+  <div class="card">
+    <h3>Study Uses the Same Truth Libraries</h3>
+    <div class="small">Your study pages and non-math questions pull from the same source of truth. Improve one, improve both.</div>
+  </div>
+</div>
+
+    <div class="footer">Front-end only • GitHub Pages ready • Session questions lock at test start.</div>
+  </div>
+  <script src="js/storage.js"></script>
+  <script src="js/page_helpers.js"></script>
+  <script src="generators/math/math_engine.js"></script>
+  <script src="generators/nonmath/nonmath_engine.js"></script>
+  <script src="js/quiz_engine.js"></script>
+  <script src="js/exam_engine.js"></script>
+  <script src="js/adaptive_engine.js"></script>
+  <script src="js/survival_engine.js"></script>
+  <script>WWPage.updateProgressKPI();</script>
+</body>
+</html>

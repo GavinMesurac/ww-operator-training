@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Exam</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">WW</div>
+        <div>
+          <h1>WW Operator Training</h1>
+          <div class="sub">Georgia-style training dashboard</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="practice.html">Practice</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="exam.html">Exam</a>
+        <a href="adaptive.html">Adaptive</a>
+        <a href="survival.html">Survival</a>
+        <a href="study.html">Study</a>
+        <a href="progress.html">Progress</a>
+        <a href="admin/generator.html">Admin</a>
+      </div>
+    </div>
+    
+<div class="grid">
+  <div class="card half">
+    <h2>Practice Exam</h2>
+    <div class="small">Exact structure: 110 questions, 100 graded, 10 pilot, 2 hours. The full exam is generated at the start and then locked.</div>
+    <hr/>
+    <div class="row">
+      <button class="btn primary" id="startExamBtn">Start Exam</button>
+      <span class="pill" id="timerPill">02:00:00</span>
+      <span class="pill" id="progressPill">0 / 110</span>
+    </div>
+  </div>
+  <div class="card half">
+    <h2>Exam Rules</h2>
+    <div class="small">No explanations during the exam. Pilot questions are mixed in and not identified.</div>
+  </div>
+  <div class="card">
+    <p class="qstem" id="qStem">Press Start Exam to begin.</p>
+    <div class="choices" id="qChoices"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="markBtn">Mark for Review</button>
+      <button class="btn good" id="nextBtn">Next</button>
+      <button class="btn bad" id="submitBtn">Submit Exam</button>
+    </div>
+    <div id="resultBox" class="notice hidden" style="margin-top:12px"></div>
+  </div>
+</div>
+
+    <div class="footer">Front-end only • GitHub Pages ready • Session questions lock at test start.</div>
+  </div>
+  <script src="js/storage.js"></script>
+  <script src="js/page_helpers.js"></script>
+  <script src="generators/math/math_engine.js"></script>
+  <script src="generators/nonmath/nonmath_engine.js"></script>
+  <script src="js/quiz_engine.js"></script>
+  <script src="js/exam_engine.js"></script>
+  <script src="js/adaptive_engine.js"></script>
+  <script src="js/survival_engine.js"></script>
+  
+<script>
+(async function(){
+  let exam = [], idx=0, started=false, endTime=null, timer=null;
+  let answers = {}, marked = new Set();
+
+  function tick(){
+    if(!started || !endTime) return;
+    const ms = endTime - Date.now();
+    if(ms <= 0){ clearInterval(timer); submitExam(); return; }
+    const h = Math.floor(ms/3600000).toString().padStart(2,"0");
+    const m = Math.floor((ms%3600000)/60000).toString().padStart(2,"0");
+    const s = Math.floor((ms%60000)/1000).toString().padStart(2,"0");
+    timerPill.textContent = `${h}:${m}:${s}`;
+  }
+  function render(i){
+    const q = exam[i];
+    if(!q){ qStem.textContent = "Exam complete."; qChoices.innerHTML=""; return; }
+    qStem.textContent = q.question;
+    qChoices.innerHTML = "";
+    q.choices.forEach((choice, j) => {
+      const div = document.createElement("div");
+      div.className = "choice";
+      if(answers[i] === j) div.classList.add("correct");
+      div.textContent = choice;
+      div.onclick = () => { answers[i] = j; render(i); };
+      qChoices.appendChild(div);
+    });
+    progressPill.textContent = `${i+1} / ${exam.length}`;
+  }
+  async function submitExam(){
+    clearInterval(timer);
+    let gradedCorrect = 0, gradedTotal = 0;
+    exam.forEach((q,i) => {
+      if(!q.pilot){
+        gradedTotal += 1;
+        if(answers[i] === q.correct_index) gradedCorrect += 1;
+      }
+    });
+    const pct = Math.round((gradedCorrect/gradedTotal)*100);
+    const pass = pct >= 70 ? "PASS" : "FAIL";
+    const p = WWStorage.getProgress();
+    p.examHistory.push({date:new Date().toISOString(), score:gradedCorrect, total:gradedTotal, pct, pass});
+    WWStorage.saveJSON("ww_progress", p);
+    resultBox.classList.remove("hidden");
+    resultBox.textContent = `Exam complete. Score: ${gradedCorrect} / ${gradedTotal} (${pct}%). Result: ${pass}.`;
+    qStem.textContent = "Exam submitted.";
+    qChoices.innerHTML = "";
+  }
+  startExamBtn.onclick = async function(){
+    exam = await WWExamEngine.buildExam();
+    sessionStorage.setItem("ww_current_exam", JSON.stringify(exam));
+    idx = 0; answers = {}; marked = new Set();
+    started = true;
+    endTime = Date.now() + 2*60*60*1000;
+    timer = setInterval(tick, 1000); tick();
+    render(0);
+  };
+  nextBtn.onclick = function(){ if(!exam.length) return; idx = Math.min(idx+1, exam.length-1); render(idx); };
+  markBtn.onclick = function(){ if(!exam.length) return; marked.add(idx); };
+  submitBtn.onclick = submitExam;
+})();
+</script>
+
+</body>
+</html>

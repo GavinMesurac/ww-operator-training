@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Study Topics</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">WW</div>
+        <div>
+          <h1>WW Operator Training</h1>
+          <div class="sub">Georgia-style training dashboard</div>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="practice.html">Practice</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="exam.html">Exam</a>
+        <a href="adaptive.html">Adaptive</a>
+        <a href="survival.html">Survival</a>
+        <a href="study.html">Study</a>
+        <a href="progress.html">Progress</a>
+        <a href="admin/generator.html">Admin</a>
+      </div>
+    </div>
+    
+<div class="grid">
+  <div class="card four">
+    <h2>Study Topics</h2>
+    <div class="small">These pages pull from the same truth libraries used by the non-math generator.</div>
+    <hr/>
+    <div class="list" id="topicList"></div>
+  </div>
+  <div class="card eight">
+    <h2 id="topicTitle">Study Library</h2>
+    <div class="small" id="topicSub">Choose a topic on the left.</div>
+    <hr/>
+    <div id="truthBox" class="list"></div>
+  </div>
+</div>
+
+    <div class="footer">Front-end only • GitHub Pages ready • Session questions lock at test start.</div>
+  </div>
+  <script src="js/storage.js"></script>
+  <script src="js/page_helpers.js"></script>
+  <script src="generators/math/math_engine.js"></script>
+  <script src="generators/nonmath/nonmath_engine.js"></script>
+  <script src="js/quiz_engine.js"></script>
+  <script src="js/exam_engine.js"></script>
+  <script src="js/adaptive_engine.js"></script>
+  <script src="js/survival_engine.js"></script>
+  
+<script>
+(async function(){
+  const files = [
+    ["activated_sludge","Activated Sludge"],["microbiology","Microbiology"],["clarifiers","Clarifiers"],
+    ["aeration","Aeration"],["filtration","Filtration"],["disinfection","Disinfection"],["sludge","Sludge Handling"],
+    ["laboratory","Laboratory"],["collection","Collection System"],["equipment","Equipment"],["safety","Safety"],["regulatory","Regulatory"]
+  ];
+  async function loadTopic(id, title){
+    const res = await fetch(`data/truth_libraries/${id}.json`);
+    const data = await res.json();
+    topicTitle.textContent = title;
+    topicSub.textContent = `${data.truths.length} truth statements in this topic.`;
+    truthBox.innerHTML = "";
+    data.truths.forEach(t => {
+      const div = document.createElement("div");
+      div.className = "notice";
+      div.innerHTML = `<div>${t.truth}</div><div class="small">${(t.tags||[]).join(", ")}</div>`;
+      truthBox.appendChild(div);
+    });
+  }
+  files.forEach(([id,title]) => {
+    const a = document.createElement("button");
+    a.className = "btn";
+    a.textContent = title;
+    a.onclick = () => loadTopic(id, title);
+    topicList.appendChild(a);
+  });
+  loadTopic("activated_sludge","Activated Sludge");
+})();
+</script>
+
+</body>
+</html>
