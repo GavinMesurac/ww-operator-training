@@ -1,0 +1,69 @@
+{
+  "title": "Activated Sludge",
+  "category": "activated_sludge",
+  "truths": [
+    {
+      "truth": "Activated sludge uses microorganisms to consume biodegradable organic matter.",
+      "tags": [
+        "activated_sludge",
+        "process_basics"
+      ]
+    },
+    {
+      "truth": "Return activated sludge maintains biomass concentration in the aeration basin.",
+      "tags": [
+        "RAS",
+        "activated_sludge"
+      ]
+    },
+    {
+      "truth": "Waste activated sludge controls sludge age.",
+      "tags": [
+        "WAS",
+        "sludge_age"
+      ]
+    },
+    {
+      "truth": "High F/M promotes young sludge conditions.",
+      "tags": [
+        "F/M",
+        "young_sludge"
+      ]
+    },
+    {
+      "truth": "Low F/M promotes older sludge conditions.",
+      "tags": [
+        "F/M",
+        "old_sludge"
+      ]
+    },
+    {
+      "truth": "Bulking sludge settles poorly because filamentous organisms interfere with compaction.",
+      "tags": [
+        "bulking",
+        "settling"
+      ]
+    },
+    {
+      "truth": "Pin floc causes fine solids carryover in the effluent.",
+      "tags": [
+        "pin_floc",
+        "effluent"
+      ]
+    },
+    {
+      "truth": "Toxic chemicals can inhibit microbial activity and worsen effluent quality.",
+      "tags": [
+        "toxicity",
+        "effluent"
+      ]
+    },
+    {
+      "truth": "Cold temperatures slow biological activity in activated sludge systems.",
+      "tags": [
+        "temperature",
+        "biology"
+      ]
+    }
+  ]
+}

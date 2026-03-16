@@ -1,0 +1,50 @@
+{
+  "title": "Collection System",
+  "category": "collection",
+  "truths": [
+    {
+      "truth": "Most collection systems rely on gravity flow.",
+      "tags": [
+        "gravity_flow"
+      ]
+    },
+    {
+      "truth": "Infiltration is groundwater entering the sewer system.",
+      "tags": [
+        "infiltration"
+      ]
+    },
+    {
+      "truth": "Inflow is stormwater entering the sewer system.",
+      "tags": [
+        "inflow"
+      ]
+    },
+    {
+      "truth": "Grease buildup can cause sewer blockages.",
+      "tags": [
+        "grease",
+        "blockage"
+      ]
+    },
+    {
+      "truth": "Routine sewer cleaning helps prevent blockages.",
+      "tags": [
+        "maintenance"
+      ]
+    },
+    {
+      "truth": "Lift stations are used where gravity flow alone is not possible.",
+      "tags": [
+        "lift_station"
+      ]
+    },
+    {
+      "truth": "Rain-driven flow spikes are commonly caused by inflow.",
+      "tags": [
+        "inflow",
+        "scenario"
+      ]
+    }
+  ]
+}

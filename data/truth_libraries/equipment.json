@@ -1,0 +1,52 @@
+{
+  "title": "Equipment",
+  "category": "equipment",
+  "truths": [
+    {
+      "truth": "Pumps move wastewater through treatment systems.",
+      "tags": [
+        "pumps"
+      ]
+    },
+    {
+      "truth": "Cavitation occurs when vapor bubbles form and collapse in a pump.",
+      "tags": [
+        "pumps",
+        "cavitation"
+      ]
+    },
+    {
+      "truth": "Cavitation can cause vibration and damage pump impellers.",
+      "tags": [
+        "pumps",
+        "cavitation",
+        "vibration"
+      ]
+    },
+    {
+      "truth": "Blowers supply air to aeration systems.",
+      "tags": [
+        "blowers"
+      ]
+    },
+    {
+      "truth": "Valves control and isolate flow in piping systems.",
+      "tags": [
+        "valves"
+      ]
+    },
+    {
+      "truth": "Lubrication reduces mechanical wear.",
+      "tags": [
+        "maintenance"
+      ]
+    },
+    {
+      "truth": "Motor overheating may indicate overload or mechanical resistance.",
+      "tags": [
+        "motors",
+        "failure"
+      ]
+    }
+  ]
+}

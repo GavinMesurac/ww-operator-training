@@ -1,0 +1,44 @@
+{
+  "title": "Filtration",
+  "category": "filtration",
+  "truths": [
+    {
+      "truth": "Filtration removes fine suspended solids and improves effluent clarity.",
+      "tags": [
+        "purpose",
+        "filtration"
+      ]
+    },
+    {
+      "truth": "Increasing head loss indicates solids are accumulating in the filter.",
+      "tags": [
+        "head_loss"
+      ]
+    },
+    {
+      "truth": "Backwashing cleans filter media by removing trapped solids.",
+      "tags": [
+        "backwash"
+      ]
+    },
+    {
+      "truth": "Filter breakthrough occurs when solids pass through the filter and increase effluent turbidity.",
+      "tags": [
+        "breakthrough",
+        "turbidity"
+      ]
+    },
+    {
+      "truth": "Excessive hydraulic loading can reduce filtration performance.",
+      "tags": [
+        "loading"
+      ]
+    },
+    {
+      "truth": "Dual media filters often use sand and anthracite.",
+      "tags": [
+        "media"
+      ]
+    }
+  ]
+}

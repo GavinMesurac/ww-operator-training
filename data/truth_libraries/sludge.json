@@ -1,0 +1,45 @@
+{
+  "title": "Sludge Handling",
+  "category": "sludge",
+  "truths": [
+    {
+      "truth": "Thickening increases sludge solids concentration and reduces volume.",
+      "tags": [
+        "thickening"
+      ]
+    },
+    {
+      "truth": "Anaerobic digestion stabilizes sludge and produces methane.",
+      "tags": [
+        "anaerobic_digestion",
+        "methane"
+      ]
+    },
+    {
+      "truth": "Aerobic digestion uses oxygen to stabilize sludge.",
+      "tags": [
+        "aerobic_digestion"
+      ]
+    },
+    {
+      "truth": "Dewatering removes water from sludge and reduces disposal cost.",
+      "tags": [
+        "dewatering"
+      ]
+    },
+    {
+      "truth": "Stabilized sludge generally produces fewer odors.",
+      "tags": [
+        "stabilization",
+        "odor"
+      ]
+    },
+    {
+      "truth": "Poor digestion may result in odors and unstable biosolids.",
+      "tags": [
+        "digestion",
+        "odor"
+      ]
+    }
+  ]
+}

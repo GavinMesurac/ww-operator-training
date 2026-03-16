@@ -1,0 +1,42 @@
+{
+  "title": "Safety",
+  "category": "safety",
+  "truths": [
+    {
+      "truth": "Personal protective equipment protects workers from workplace hazards.",
+      "tags": [
+        "PPE"
+      ]
+    },
+    {
+      "truth": "Confined spaces may contain hazardous atmospheres and require special entry procedures.",
+      "tags": [
+        "confined_space"
+      ]
+    },
+    {
+      "truth": "Hydrogen sulfide is a toxic gas commonly associated with a rotten egg odor.",
+      "tags": [
+        "H2S"
+      ]
+    },
+    {
+      "truth": "Lockout/tagout prevents accidental equipment startup during maintenance.",
+      "tags": [
+        "LOTO"
+      ]
+    },
+    {
+      "truth": "Chemical spills require immediate response according to site procedures.",
+      "tags": [
+        "chemical_spill"
+      ]
+    },
+    {
+      "truth": "Chlorine gas detection requires immediate emergency response and evacuation as appropriate.",
+      "tags": [
+        "chlorine"
+      ]
+    }
+  ]
+}

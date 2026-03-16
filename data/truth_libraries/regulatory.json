@@ -1,0 +1,43 @@
+{
+  "title": "Regulatory",
+  "category": "regulatory",
+  "truths": [
+    {
+      "truth": "NPDES permits regulate wastewater discharges to surface waters.",
+      "tags": [
+        "NPDES"
+      ]
+    },
+    {
+      "truth": "Effluent limits in permits set maximum allowable pollutant concentrations or loadings.",
+      "tags": [
+        "permit_limits"
+      ]
+    },
+    {
+      "truth": "Exceeding a permit limit is a violation.",
+      "tags": [
+        "violations"
+      ]
+    },
+    {
+      "truth": "Operators must monitor effluent quality to demonstrate compliance.",
+      "tags": [
+        "monitoring"
+      ]
+    },
+    {
+      "truth": "Operators must report required monitoring results.",
+      "tags": [
+        "reporting"
+      ]
+    },
+    {
+      "truth": "Repeated permit violations can lead to enforcement actions and penalties.",
+      "tags": [
+        "enforcement",
+        "violations"
+      ]
+    }
+  ]
+}

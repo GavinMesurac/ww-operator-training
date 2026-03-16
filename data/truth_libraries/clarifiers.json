@@ -1,0 +1,52 @@
+{
+  "title": "Clarifiers",
+  "category": "clarifiers",
+  "truths": [
+    {
+      "truth": "Clarifiers separate settleable solids from treated water by gravity.",
+      "tags": [
+        "clarifiers",
+        "function"
+      ]
+    },
+    {
+      "truth": "Rising sludge in a clarifier is commonly caused by denitrification.",
+      "tags": [
+        "rising_sludge",
+        "denitrification"
+      ]
+    },
+    {
+      "truth": "A sludge blanket that becomes too deep can cause solids carryover.",
+      "tags": [
+        "sludge_blanket",
+        "carryover"
+      ]
+    },
+    {
+      "truth": "Hydraulic overloading can wash solids out of a clarifier.",
+      "tags": [
+        "hydraulic_overload"
+      ]
+    },
+    {
+      "truth": "Short circuiting reduces effective settling time in a clarifier.",
+      "tags": [
+        "short_circuiting"
+      ]
+    },
+    {
+      "truth": "Mechanical scraper failure can allow sludge to accumulate.",
+      "tags": [
+        "mechanical_failure"
+      ]
+    },
+    {
+      "truth": "Operators monitor sludge blanket depth to maintain clarifier performance.",
+      "tags": [
+        "operations",
+        "sludge_blanket"
+      ]
+    }
+  ]
+}

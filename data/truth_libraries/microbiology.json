@@ -1,0 +1,63 @@
+{
+  "title": "Microbiology",
+  "category": "microbiology",
+  "truths": [
+    {
+      "truth": "Filamentous bacteria extend outside sludge floc and contribute to bulking.",
+      "tags": [
+        "filamentous",
+        "bulking"
+      ]
+    },
+    {
+      "truth": "Zoogleal bacteria form compact floc that settles well.",
+      "tags": [
+        "zoogleal",
+        "floc"
+      ]
+    },
+    {
+      "truth": "Free-swimming bacteria are commonly associated with very young sludge.",
+      "tags": [
+        "young_sludge",
+        "free_swimming"
+      ]
+    },
+    {
+      "truth": "Stalked ciliates usually indicate a stable activated sludge process.",
+      "tags": [
+        "stalked_ciliates",
+        "stable_process"
+      ]
+    },
+    {
+      "truth": "Rotifers are commonly found in older sludge and low F/M conditions.",
+      "tags": [
+        "rotifers",
+        "old_sludge"
+      ]
+    },
+    {
+      "truth": "Nematodes usually indicate very old sludge.",
+      "tags": [
+        "nematodes",
+        "old_sludge"
+      ]
+    },
+    {
+      "truth": "Low dissolved oxygen promotes filamentous growth.",
+      "tags": [
+        "DO",
+        "filamentous"
+      ]
+    },
+    {
+      "truth": "Nitrifying bacteria are sensitive to low dissolved oxygen and low alkalinity.",
+      "tags": [
+        "nitrification",
+        "DO",
+        "alkalinity"
+      ]
+    }
+  ]
+}

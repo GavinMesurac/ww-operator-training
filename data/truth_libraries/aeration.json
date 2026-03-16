@@ -1,0 +1,47 @@
+{
+  "title": "Aeration",
+  "category": "aeration",
+  "truths": [
+    {
+      "truth": "Aeration supplies oxygen for aerobic biological treatment.",
+      "tags": [
+        "oxygen",
+        "aeration"
+      ]
+    },
+    {
+      "truth": "Low dissolved oxygen can promote filamentous growth and poor settling.",
+      "tags": [
+        "DO",
+        "filamentous"
+      ]
+    },
+    {
+      "truth": "Aeration also provides mixing in many activated sludge systems.",
+      "tags": [
+        "mixing"
+      ]
+    },
+    {
+      "truth": "Poor mixing can allow solids to settle in aeration basins.",
+      "tags": [
+        "mixing",
+        "solids"
+      ]
+    },
+    {
+      "truth": "Nitrification requires oxygen and may fail when DO is too low.",
+      "tags": [
+        "nitrification",
+        "DO"
+      ]
+    },
+    {
+      "truth": "Higher organic loading increases oxygen demand.",
+      "tags": [
+        "BOD",
+        "oxygen_demand"
+      ]
+    }
+  ]
+}

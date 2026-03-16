@@ -1,0 +1,53 @@
+{
+  "title": "Laboratory",
+  "category": "laboratory",
+  "truths": [
+    {
+      "truth": "A grab sample represents wastewater conditions at one specific moment.",
+      "tags": [
+        "sampling",
+        "grab"
+      ]
+    },
+    {
+      "truth": "A composite sample represents wastewater conditions over time or flow.",
+      "tags": [
+        "sampling",
+        "composite"
+      ]
+    },
+    {
+      "truth": "The standard BOD test duration is five days.",
+      "tags": [
+        "BOD"
+      ]
+    },
+    {
+      "truth": "Air bubbles in a BOD bottle can affect dissolved oxygen readings.",
+      "tags": [
+        "BOD",
+        "testing_error"
+      ]
+    },
+    {
+      "truth": "Improper dilution can cause inaccurate BOD results.",
+      "tags": [
+        "BOD",
+        "testing_error"
+      ]
+    },
+    {
+      "truth": "Volatile solids generally represent the organic portion of solids.",
+      "tags": [
+        "solids",
+        "volatile_solids"
+      ]
+    },
+    {
+      "truth": "Lab instruments must be calibrated regularly for accurate results.",
+      "tags": [
+        "calibration"
+      ]
+    }
+  ]
+}

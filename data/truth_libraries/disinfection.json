@@ -1,0 +1,49 @@
+{
+  "title": "Disinfection",
+  "category": "disinfection",
+  "truths": [
+    {
+      "truth": "Disinfection destroys pathogenic microorganisms before discharge.",
+      "tags": [
+        "purpose"
+      ]
+    },
+    {
+      "truth": "Chlorine residual indicates disinfectant remaining after chlorine demand is satisfied.",
+      "tags": [
+        "chlorine_residual"
+      ]
+    },
+    {
+      "truth": "Adequate contact time is required for effective chlorination.",
+      "tags": [
+        "contact_time"
+      ]
+    },
+    {
+      "truth": "Organic matter increases chlorine demand.",
+      "tags": [
+        "chlorine_demand"
+      ]
+    },
+    {
+      "truth": "Dechlorination removes excess chlorine before discharge.",
+      "tags": [
+        "dechlorination"
+      ]
+    },
+    {
+      "truth": "Chlorine gas is toxic and requires immediate response if leaked.",
+      "tags": [
+        "chlorine_safety"
+      ]
+    },
+    {
+      "truth": "Proper ventilation is required in chlorine storage areas.",
+      "tags": [
+        "ventilation",
+        "chlorine_safety"
+      ]
+    }
+  ]
+}
