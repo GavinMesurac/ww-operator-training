@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Exam</title>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><div class="logo">WW</div><div><h1>WW Operator Training</h1><div class="sub">Georgia-first wastewater operator training system</div></div></div>
+    <div class="nav"><a href="index.html">Home</a><a href="practice.html">Practice</a><a href="tests.html">Tests</a><a href="study.html">Study</a><a href="progress.html">Progress</a><a href="profile.html">Profile</a><a href="settings.html">Settings</a></div>
+  </div>
+  <div class="exam-shell">
+    <div class="exam-header">
+      <div><div class="exam-title">Practice Certification Exam</div><div class="small" id="progressText">Question 0 of 0</div></div>
+      <div class="exam-timer" id="timerText">02:00:00</div>
+    </div>
+    <div class="row" style="margin-bottom:12px"><span class="flag-badge" id="flagStatus">Not flagged</span></div>
+    <div class="exam-question" id="questionText">Loading…</div>
+    <div class="exam-choices" id="choices"></div>
+    <div id="explanation" class="exam-explanation hidden"></div>
+    <div class="exam-controls">
+      <button class="btn" id="prevBtn">Previous</button>
+      <button class="btn" id="nextBtn">Next</button>
+      <button class="btn warn" id="markBtn">Flag for Review</button>
+      <button class="btn bad" id="submitBtn">Submit Exam</button>
+    </div>
+    <div class="notice hidden" id="submitWarningBox" style="margin-top:16px"></div>
+    <div class="notice hidden" id="scoreBox" style="margin-top:16px"></div>
+    <div class="card hidden" id="reviewCard" style="margin-top:18px"><h2>Exam Review</h2><div id="reviewList" class="grid"></div></div>
+  </div>
+  <div class="footer">Integrated book build</div>
+</div>
+<script type="module" src="js/pages/exam_run_page.js"></script>
+</body>
+</html>

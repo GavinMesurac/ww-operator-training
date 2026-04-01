@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Practice</title>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">WW</div>
+      <div><h1>WW Operator Training</h1><div class="sub">Georgia-first wastewater operator training system</div></div>
+    </div>
+    <div class="nav"><a href="index.html">Home</a>
+<a href="practice.html">Practice</a>
+<a href="tests.html">Tests</a>
+<a href="study.html">Study</a>
+<a href="progress.html">Progress</a>
+<a href="profile.html">Profile</a>
+<a href="settings.html">Settings</a></div>
+  </div>
+
+<div class="grid">
+  <div class="card half">
+    <h2>Practice</h2>
+    <div class="small">Generate one question at a time for quick reps.</div><hr/>
+    <div class="row">
+      <label>Mode</label>
+      <select id="modeSel"><option value="mixed">Mixed</option><option value="math">Math</option><option value="nonmath">Non-Math</option></select>
+      <label>Math Family</label>
+      <select id="mathSel"><option value="any">Any</option><option value="detention_time">Detention Time</option><option value="pounds_formula">Pounds Formula</option><option value="dose">Dose</option><option value="svi">SVI</option><option value="fm_ratio">F/M Ratio</option><option value="srt">Sludge Age / SRT</option><option value="ct">CT</option><option value="chlorine_dose">Chlorine Dose</option></select>
+      <label>Non-Math Category</label>
+      <select id="nonMathSel"><option value="any">Any</option><option value="activated_sludge">Activated Sludge</option><option value="clarifiers">Clarifiers</option><option value="disinfection">Disinfection</option><option value="sludge_handling">Sludge Handling</option><option value="laboratory">Laboratory</option><option value="safety">Safety</option><option value="collection_systems">Collection Systems</option><option value="equipment">Equipment</option><option value="regulatory">Regulatory</option></select>
+      <button class="btn primary" id="generateBtn">Generate Question</button>
+    </div>
+  </div>
+  <div class="card half"><h2>Question Meta</h2><div class="notice" id="meta">No question loaded yet.</div><div class="pill" id="streakBox" style="margin-top:12px">🔥 Streak: 0</div></div>
+  <div class="card"><p class="qstem" id="questionText">Loading…</p><div class="choices" id="choices"></div><div id="explanation" class="explanation hidden"></div></div>
+</div>
+
+  <div class="footer">WW Operator Training • v3 refactor</div>
+</div>
+<script type="module" src="js/pages/practice_page.js"></script>
+</body>
+</html>

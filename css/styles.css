@@ -1,0 +1,87 @@
+:root{
+  --bg:#eef2f6;
+  --panel:#ffffff;
+  --panel-soft:#f7f9fc;
+  --text:#17202a;
+  --muted:#5c6b7a;
+  --accent:#4f6fae;
+  --good:#138a52;
+  --bad:#c0392b;
+  --warn:#d58b00;
+  --border:#d7dee7;
+  --shadow:0 8px 24px rgba(19, 32, 55, 0.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:20px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:14px 18px;position:sticky;top:12px;z-index:5;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#a9bedf,#6f8fbb);font-weight:800;color:#fff}
+.brand h1{margin:0;font-size:18px}
+.sub{font-size:12px;color:var(--muted)}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav a,.btn,select,input{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:12px;padding:10px 12px;font:inherit}
+select option{background:#fff;color:var(--text)}
+.btn{cursor:pointer}
+.btn:hover,.nav a:hover{background:#f4f7fb}
+.btn.primary{background:#e8eef8;border-color:#c9d7ee}
+.btn.good{background:#e6f6ee;border-color:#b9e3ca}
+.btn.bad{background:#fbeceb;border-color:#efc0bc}
+.btn.warn{background:#fff5df;border-color:#ecd19a}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:18px}
+.card{grid-column:span 12;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+@media (min-width:900px){.half{grid-column:span 6}.third{grid-column:span 4}.quarter{grid-column:span 3}.eight{grid-column:span 8}.four{grid-column:span 4}}
+h1,h2,h3,p{margin-top:0}
+.hero h2{font-size:40px;line-height:1.05}
+.small{font-size:13px;color:var(--muted);line-height:1.5}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.metric{padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel-soft)}
+.metric .big{font-size:28px;font-weight:800}
+.pill,.tag{font-size:12px;color:var(--muted);border:1px solid var(--border);padding:6px 10px;border-radius:999px;background:#fff}
+.notice{padding:10px 12px;border-radius:12px;background:var(--panel-soft);border:1px solid var(--border)}
+.qstem{font-size:20px;line-height:1.45}
+.choices{display:grid;gap:10px}
+.choice-btn{text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;font:inherit}
+.choice-btn:hover{background:#f8fbff}
+.choice-btn.selected{border-color:#9ab1d5}
+.choice-btn.correct{background:#dff4e8;border-color:#2ca765}
+.choice-btn.wrong{background:#fde7e4;border-color:#d95f50}
+.explanation{background:#eef2ff;border-left:4px solid #6976d9;padding:12px;border-radius:8px;margin-top:12px}
+.hidden{display:none!important}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+ul.clean{list-style:none;padding-left:0;margin:0;display:grid;gap:8px}
+.footer{padding:28px 0 40px;color:var(--muted);font-size:12px}
+pre{background:#fafbfd;border:1px solid var(--border);border-radius:12px;padding:12px;white-space:pre-wrap;word-break:break-word}
+.flash-correct{box-shadow:0 0 0 4px rgba(19,138,82,0.16)}
+.flash-wrong{box-shadow:0 0 0 4px rgba(192,57,43,0.16)}
+.test-setup{max-width:760px;margin:18px auto 0}
+.test-shell{max-width:980px;margin:18px auto 0}
+.exam-shell{background:#ffffff!important;color:#000;max-width:980px;margin:18px auto 0;padding:20px;border:1px solid #dcdcdc;border-radius:8px;box-shadow:none}
+.exam-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ccc;padding-bottom:12px;margin-bottom:16px}
+.exam-title{font-size:20px;font-weight:700}
+.exam-timer{font-size:26px;font-weight:800;color:#c00000}
+.exam-question{font-size:18px;line-height:1.5;margin-bottom:14px}
+.exam-choices{display:grid;gap:10px}
+.exam-choice{display:block;padding:10px 12px;border:1px solid #bbb;border-radius:4px;background:#fff;color:#000;cursor:pointer}
+.exam-choice:hover{background:#f3f3f3}
+.exam-choice.correct{background:#d9f0dd;border-color:#4d8f58}
+.exam-choice.wrong{background:#f6dada;border-color:#b84e4e}
+.exam-explanation{margin-top:16px;padding:12px;border:1px solid #d7d7d7;background:#f7f7f7;color:#111}
+.exam-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.exam-controls .btn{background:#fff;color:#111;border-color:#aaa}
+.flag-badge{font-size:12px;padding:4px 8px;border:1px solid #d9b36a;background:#fff5df;border-radius:999px;color:#7b5a12}
+@media (max-width:700px){.wrap{padding:12px}.topbar{padding:12px}.brand h1{font-size:16px}.hero h2{font-size:28px}.qstem{font-size:18px}.nav{gap:6px}.nav a,.btn,select,input{padding:9px 10px;border-radius:10px}.card{padding:14px;border-radius:16px}.row{gap:8px}.metric .big{font-size:24px}.table th,.table td{padding:8px}}
+
+.chapter-stack,.section-stack{display:grid;gap:10px}
+.chapter-btn,.section-btn{width:100%;text-align:left;border:1px solid var(--border);background:#fff;border-radius:14px;padding:12px;display:grid;gap:4px;cursor:pointer;font:inherit}
+.chapter-btn.active,.section-btn.active{background:#eef4ff;border-color:#b8c9e8}
+.study-layout{display:grid;grid-template-columns:280px 1fr;gap:18px}
+.section-sidebar{border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--panel-soft)}
+.reader-panel{min-width:0}
+.study-block{border:1px solid var(--border);border-radius:16px;background:#fff;padding:16px;margin-bottom:14px}
+.study-block p{line-height:1.65}
+.prompt-grid{display:grid;gap:10px}
+.prompt-card{padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--panel-soft)}
+@media (max-width:900px){.study-layout{grid-template-columns:1fr}.section-sidebar{order:-1}}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Adaptive Setup</title>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">WW</div>
+      <div><h1>WW Operator Training</h1><div class="sub">Georgia-first wastewater operator training system</div></div>
+    </div>
+    <div class="nav"><a href="index.html">Home</a>
+<a href="practice.html">Practice</a>
+<a href="tests.html">Tests</a>
+<a href="study.html">Study</a>
+<a href="progress.html">Progress</a>
+<a href="profile.html">Profile</a>
+<a href="settings.html">Settings</a></div>
+  </div>
+
+<div class="card test-setup">
+  <h2>Adaptive Setup</h2>
+  <div class="small">Adaptive mode works without an account, but it becomes much better when a profile is active because it can remember your progress.</div><hr/>
+  <div class="row">
+    <label>Question Count</label><select id="countSel"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option></select>
+    <label>Difficulty</label><select id="difficultySel"><option value="">Auto</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="insane">Insane</option></select>
+    <button id="startAdaptiveBtn" class="btn primary">Start Adaptive Session</button>
+  </div>
+</div>
+
+  <div class="footer">WW Operator Training • v3 refactor</div>
+</div>
+<script type="module" src="js/pages/adaptive_setup_page.js"></script>
+</body>
+</html>

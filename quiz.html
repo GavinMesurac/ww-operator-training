@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Quiz</title>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">WW</div>
+      <div><h1>WW Operator Training</h1><div class="sub">Georgia-first wastewater operator training system</div></div>
+    </div>
+    <div class="nav"><a href="index.html">Home</a>
+<a href="practice.html">Practice</a>
+<a href="quiz.html">Quiz</a>
+<a href="exam.html">Exam</a>
+<a href="adaptive.html">Adaptive</a>
+<a href="survival.html">Survival</a>
+<a href="study.html">Study</a>
+<a href="progress.html">Progress</a>
+<a href="profile.html">Profile</a>
+<a href="pricing.html">Pricing</a>
+<a href="sync.html">Sync</a>
+<a href="recommendations.html">Recommendations</a>
+<a href="analytics.html">Analytics</a>
+<a href="retention.html">Retention</a>
+<a href="settings.html">Settings</a>
+<a href="achievements.html">Achievements</a>
+<a href="admin/generator.html">Admin</a></div>
+  </div>
+  
+<div class="grid">
+  <div class="card half">
+    <h2>Quiz</h2><div class="small">Locked quiz session with backtracking and end review.</div><hr/>
+    <div class="row">
+      <label>Mode</label><select id="modeSel"><option value="mixed">Mixed</option><option value="math">Math</option><option value="nonmath">Non-Math</option></select>
+      <label>Count</label><select id="countSel"><option>10</option><option selected>25</option><option>50</option></select>
+      <label>Math Family</label><select id="mathSel"><option value="any">Any</option><option value="detention_time">Detention Time</option><option value="pounds_formula">Pounds Formula</option><option value="dose">Dose</option><option value="svi">SVI</option><option value="fm_ratio">F/M Ratio</option><option value="srt">Sludge Age / SRT</option><option value="ct">CT</option><option value="chlorine_dose">Chlorine Dose</option></select>
+      <label>Non-Math Category</label><select id="nonMathSel"><option value="any">Any</option><option value="activated_sludge">Activated Sludge</option><option value="clarifiers">Clarifiers</option><option value="disinfection">Disinfection</option><option value="sludge_handling">Sludge Handling</option><option value="laboratory">Laboratory</option><option value="safety">Safety</option><option value="collection_systems">Collection Systems</option><option value="equipment">Equipment</option><option value="regulatory">Regulatory</option></select>
+      <button class="btn primary" id="startQuizBtn">Start Quiz</button>
+    </div>
+  </div>
+  <div class="card half"><h2>Status</h2><div class="notice" id="progressText">No active quiz.</div><div class="notice hidden" id="scoreBox" style="margin-top:10px"></div></div>
+  <div class="card">
+    <p class="qstem" id="questionText">Start a quiz to begin.</p>
+    <div class="choices" id="choices"></div>
+    <div id="explanation" class="notice hidden" style="margin-top:12px"></div>
+    <div class="notice" id="meta" style="margin-top:12px">Meta will appear here.</div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="prevBtn">Previous</button><button class="btn good" id="nextBtn">Next</button><button class="btn warn" id="finishBtn">Finish Quiz</button></div>
+  </div>
+  <div class="card hidden" id="reviewCard"><h2>Quiz Review</h2><div id="reviewList" class="grid"></div></div>
+</div>
+
+  <div class="footer">WW Operator Training • Full feature build v2 fixed</div>
+</div>
+<script type="module" src="js/pages/quiz_page.js"></script>
+</body>
+</html>

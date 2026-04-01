@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Exam Setup</title>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">WW</div>
+      <div><h1>WW Operator Training</h1><div class="sub">Georgia-first wastewater operator training system</div></div>
+    </div>
+    <div class="nav">
+      <a href="index.html">Home</a><a href="practice.html">Practice</a><a href="tests.html">Tests</a><a href="study.html">Study</a><a href="progress.html">Progress</a><a href="profile.html">Profile</a><a href="settings.html">Settings</a>
+    </div>
+  </div>
+  <div class="card test-setup">
+    <h2>Exam Setup</h2>
+    <div class="small">This exam is fixed at <b>110 questions</b> to better match the real testing experience. Use the timer, flag questions for review, and submit when finished.</div>
+    <hr/>
+    <div class="row">
+      <div class="notice">Question Count: <b>110</b></div>
+      <label>Difficulty</label>
+      <select id="difficultySel">
+        <option value="">Exam Mixed</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <button id="startExamBtn" class="btn primary">Start Exam</button>
+    </div>
+  </div>
+  <div class="footer">Integrated book build</div>
+</div>
+<script type="module" src="js/pages/exam_setup_page.js"></script>
+</body>
+</html>

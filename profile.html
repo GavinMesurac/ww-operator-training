@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Profile</title>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">WW</div>
+      <div><h1>WW Operator Training</h1><div class="sub">Georgia-first wastewater operator training system</div></div>
+    </div>
+    <div class="nav"><a href="index.html">Home</a>
+<a href="practice.html">Practice</a>
+<a href="tests.html">Tests</a>
+<a href="study.html">Study</a>
+<a href="progress.html">Progress</a>
+<a href="profile.html">Profile</a>
+<a href="settings.html">Settings</a></div>
+  </div>
+
+<div class="grid">
+  <div class="card half">
+    <h2>Profile</h2>
+    <div class="notice" id="activeUserBox">Guest mode active. Create a profile to save progress.</div>
+    <div class="row" style="margin-top:12px"><input id="newUserName" type="text" placeholder="Profile name"/><button class="btn primary" id="createUserBtn">Create Profile</button></div>
+  </div>
+  <div class="card half">
+    <h2>Quick Tools</h2>
+    <div class="row">
+      <a class="btn" href="#analyticsSection">Analytics</a>
+      <a class="btn" href="#syncSection">Sync</a>
+      <a class="btn" href="#achievementsSection">Achievements</a>
+      <a class="btn" href="#accountSection">Profiles</a>
+    </div>
+  </div>
+  <div class="card" id="accountSection"><h2>All Profiles</h2><div id="userList" class="grid"></div></div>
+  <div class="card half" id="analyticsSection"><h2>Analytics</h2><ul class="clean" id="eventCounts"></ul><pre id="events"></pre><button id="clearBtn" class="btn bad">Clear Logs</button></div>
+  <div class="card half" id="syncSection"><h2>Sync</h2><div class="row"><button class="btn primary" id="pushBtn">Push</button><button class="btn good" id="pullBtn">Pull</button><button class="btn" id="inspectBtn">Inspect</button></div><div class="notice" id="syncStatus" style="margin-top:12px">Ready.</div><pre id="cloudPreview"></pre></div>
+  <div class="card" id="achievementsSection"><h2>Achievements</h2><ul class="clean" id="achList"></ul></div>
+</div>
+
+  <div class="footer">WW Operator Training • v3 refactor</div>
+</div>
+<script type="module" src="js/pages/profile_page.js"></script>
+</body>
+</html>

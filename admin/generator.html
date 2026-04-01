@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Admin Generator</title><link rel="stylesheet" href="../css/styles.css"/></head>
+<body><div class="wrap"><div class="topbar"><div class="brand"><div class="logo">WW</div><div><h1>WW Operator Training</h1><div class="sub">Admin generator panel</div></div></div><div class="nav"><a href="../index.html">Home</a>
+<a href="../practice.html">Practice</a>
+<a href="../tests.html">Tests</a>
+<a href="../study.html">Study</a>
+<a href="../progress.html">Progress</a>
+<a href="../profile.html">Profile</a>
+<a href="../settings.html">Settings</a></div></div>
+<div class="grid">
+  <div class="card half">
+    <h2>Admin Generator</h2><div class="small">Generate single questions or bulk sets for testing. Later this will control exact question types.</div><hr/>
+    <div class="row"><label>Type</label><select id="typeSel"><option value="mixed">Mixed</option><option value="math">Math</option><option value="nonmath">Non-Math</option></select><label>Count</label><input id="countInput" type="number" min="1" max="500" value="25"/><label>Language</label><select id="langSel"><option value="practice">Practice</option><option value="exam">Exam</option></select></div>
+    <div class="row" style="margin-top:10px"><label>Math Family</label><select id="mathSel"><option value="any">Any</option><option value="detention_time">Detention Time</option><option value="pounds_formula">Pounds Formula</option><option value="dose">Dose</option><option value="svi">SVI</option><option value="fm_ratio">F/M Ratio</option><option value="srt">Sludge Age / SRT</option><option value="ct">CT</option><option value="chlorine_dose">Chlorine Dose</option></select><label>Category</label><select id="catSel"><option value="any">Any</option><option value="activated_sludge">Activated Sludge</option><option value="clarifiers">Clarifiers</option><option value="disinfection">Disinfection</option><option value="sludge_handling">Sludge Handling</option><option value="laboratory">Laboratory</option><option value="safety">Safety</option><option value="collection_systems">Collection Systems</option><option value="equipment">Equipment</option><option value="regulatory">Regulatory</option></select><label>Difficulty</label><select id="diffSel"><option value="">Auto</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="insane">Insane</option></select></div>
+    <div class="row" style="margin-top:12px"><button class="btn primary" id="oneBtn">Generate One</button><button class="btn good" id="bulkBtn">Generate Bulk</button><button class="btn" id="downloadBtn">Download JSON</button></div>
+    <div class="notice" id="statusBox" style="margin-top:12px">Ready.</div>
+  </div>
+  <div class="card half"><h2>Preview</h2><pre id="preview"></pre></div>
+</div><div class="footer">Admin tools</div></div><script type="module" src="../js/pages/admin_page.js"></script></body></html>

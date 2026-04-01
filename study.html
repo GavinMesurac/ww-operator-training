@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Study</title>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">WW</div>
+      <div><h1>WW Operator Training</h1><div class="sub">Textbook-integrated study system</div></div>
+    </div>
+    <div class="nav">
+      <a href="index.html">Home</a>
+      <a href="practice.html">Practice</a>
+      <a href="tests.html">Tests</a>
+      <a href="study.html">Study</a>
+      <a href="progress.html">Progress</a>
+      <a href="profile.html">Profile</a>
+      <a href="settings.html">Settings</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card four">
+      <h2>Book Chapters</h2>
+      <div class="small">Organized by chapter first, then textbook section/subgenre. Search filters the section list and acronym bank.</div>
+      <hr/>
+      <div class="study-tools">
+        <input id="studySearch" type="text" placeholder="Search sections, text, or acronyms..."/>
+      </div>
+      <div id="chapterButtons" class="chapter-stack"></div>
+    </div>
+
+    <div class="card eight">
+      <h2 id="topicTitle">Book Study Library</h2>
+      <div class="small" id="topicSub">Choose a section from the chapter list.</div>
+      <div id="sectionMeta" class="row" style="margin-top:10px"></div>
+      <hr/>
+      <div class="study-layout">
+        <div class="section-sidebar">
+          <h3>Sections</h3>
+          <div id="sectionList" class="section-stack"></div>
+        </div>
+        <div class="reader-panel">
+          <div id="readerBody"></div>
+          <div class="study-block" style="margin-top:16px">
+            <h3>Chapter Self-Check</h3>
+            <div id="selfCheckBody" class="prompt-grid"></div>
+          </div>
+          <div class="study-block" style="margin-top:16px">
+            <h3>Acronym Bank</h3>
+            <div id="acronymBody" class="grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Integrated book build</div>
+</div>
+<script type="module" src="js/pages/study_page.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+Static site friendly. Upload contents to site root. Uses localStorage for persistence unless replaced by real backend.
